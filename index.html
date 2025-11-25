@@ -481,6 +481,24 @@
             
             async function getCustomerStats() {
                 try {
+                    // STAGE 1: Fast load - show total customers instantly (no payment method checking)
+                    const fastResponse = await fetch(`${API_URL}/get-customers-fast`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ apiKey })
+                    });
+                    
+                    const fastData = await fastResponse.json();
+                    if (fastData.success) {
+                        // Show total customers immediately
+                        setCustomerStats({
+                            total: fastData.total,
+                            withPayment: '...',  // Loading indicator
+                            loading: true
+                        });
+                    }
+                    
+                    // STAGE 2: Full load - get detailed payment method info (runs in background)
                     const response = await fetch(`${API_URL}/get-customers`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -488,7 +506,10 @@
                     });
                     
                     const data = await response.json();
-                    if (data.success) setCustomerStats(data);
+                    if (data.success) {
+                        // Update with full stats
+                        setCustomerStats(data);
+                    }
                 } catch (error) {
                     console.error(error);
                 }
