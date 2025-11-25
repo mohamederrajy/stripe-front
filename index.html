@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stripe Dashboard</title>
+    
+    <!-- React & ReactDOM from CDN -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f172a;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #f8fafc;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            font-size: 0.95rem;
+            color: #94a3b8;
+        }
+        
+        /* Status Bar */
+        .status-bar {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 25px;
+        }
+        
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .badge.success { background: #dcfce7; color: #166534; }
+        .badge.error { background: #fee2e2; color: #991b1b; }
+        .badge.warning { background: #fef3c7; color: #92400e; }
+        .badge.info { background: #dbeafe; color: #1e40af; }
+        
+        /* Cards */
+        .card {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+            border: 1px solid #334155;
+        }
+        
+        .card-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #f8fafc;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: #1e293b;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            text-align: center;
+            border-top: 3px solid #667eea;
+            border: 1px solid #334155;
+        }
+        
+        .stat-card.green { border-top-color: #10b981; }
+        .stat-card.red { border-top-color: #ef4444; }
+        .stat-card.blue { border-top-color: #3b82f6; }
+        .stat-card.orange { border-top-color: #f59e0b; }
+        
+        .stat-label {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #f8fafc;
+        }
+        
+        /* Form */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #cbd5e1;
+            margin-bottom: 6px;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-family: inherit;
+            transition: all 0.2s;
+            background: #0f172a;
+            color: #f8fafc;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+            background: #1e293b;
+        }
+        
+        small {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            display: block;
+            margin-top: 4px;
+        }
+        
+        /* Buttons */
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-family: inherit;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            background: #5568d3;
+        }
+        
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .btn-danger:hover:not(:disabled) {
+            background: #dc2626;
+        }
+        
+        /* Alerts */
+        .alert {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-left: 3px solid;
+        }
+        
+        .alert.success {
+            background: rgba(34, 197, 94, 0.15);
+            color: #4ade80;
+            border-color: #22c55e;
+        }
+        
+        .alert.error {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border-color: #ef4444;
+        }
+        
+        .alert.warning {
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+            border-color: #f59e0b;
+        }
+        
+        .alert.info {
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            border-color: #3b82f6;
+        }
+        
+        /* Results */
+        .results {
+            max-height: 450px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        
+        .results::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .results::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        
+        .results::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+        
+        .result-item {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 0.875rem;
+            border-left: 3px solid;
+        }
+        
+        .result-item.success {
+            background: rgba(34, 197, 94, 0.1);
+            border-color: #22c55e;
+        }
+        
+        .result-item.failed {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: #ef4444;
+        }
+        
+        .customer-name {
+            font-weight: 700;
+            color: #f8fafc;
+            margin-bottom: 2px;
+        }
+        
+        .customer-email {
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+        
+        .error-msg {
+            font-size: 0.75rem;
+            color: #fca5a5;
+            margin-top: 8px;
+            padding: 8px;
+            background: rgba(239, 68, 68, 0.1);
+            border-radius: 6px;
+        }
+        
+        .amount {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-top: 8px;
+        }
+        
+        .charge-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.75rem;
+        }
+        
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        
+        .detail-label {
+            color: #94a3b8;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.65rem;
+        }
+        
+        .detail-value {
+            color: #cbd5e1;
+            font-weight: 600;
+            font-family: monospace;
+        }
+        
+        .card-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            background: rgba(102, 126, 234, 0.2);
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #a5b4fc;
+            margin-top: 6px;
+        }
+        
+        .spinner {
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 0.6s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: #64748b;
+        }
+        
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+        
+        .empty-text {
+            font-size: 0.875rem;
+        }
+        
+        /* Layout */
+        .layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        const API_URL = 'http://localhost:5001';
+        
+        function App() {
+            const [backendStatus, setBackendStatus] = useState('checking');
+            const [apiKey, setApiKey] = useState('');
+            const [keyValidated, setKeyValidated] = useState(false);
+            const [stripeMode, setStripeMode] = useState('');
+            
+            const [amount, setAmount] = useState('29.99');
+            const [currency, setCurrency] = useState('usd');
+            const [description, setDescription] = useState('Monthly Subscription Fee');
+            const [maxCustomers, setMaxCustomers] = useState('0');
+            const [delay, setDelay] = useState('1.0');
+            
+            const [customerStats, setCustomerStats] = useState(null);
+            const [isCharging, setIsCharging] = useState(false);
+            const [chargeResults, setChargeResults] = useState(null);
+            const [error, setError] = useState('');
+            
+            useEffect(() => {
+                checkBackend();
+            }, []);
+            
+            async function checkBackend() {
+                try {
+                    const response = await fetch(`${API_URL}/health`);
+                    const data = await response.json();
+                    setBackendStatus(data.status === 'ok' ? 'connected' : 'error');
+                } catch (error) {
+                    setBackendStatus('error');
+                }
+            }
+            
+            async function validateApiKey() {
+                if (!apiKey) {
+                    setError('Enter your Stripe API key');
+                    return;
+                }
+                
+                setError('');
+                
+                try {
+                    const response = await fetch(`${API_URL}/validate-key`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ apiKey })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        setKeyValidated(true);
+                        setStripeMode(data.mode);
+                        await getCustomerStats();
+                    } else {
+                        setError(data.error || 'Invalid API key');
+                    }
+                } catch (error) {
+                    setError('Connection failed: ' + error.message);
+                }
+            }
+            
+            async function getCustomerStats() {
+                try {
+                    const response = await fetch(`${API_URL}/get-customers`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ apiKey })
+                    });
+                    
+                    const data = await response.json();
+                    if (data.success) setCustomerStats(data);
+                } catch (error) {
+                    console.error(error);
+                }
+            }
+            
+            async function startCharging() {
+                if (parseFloat(amount) <= 0) {
+                    setError('Amount must be greater than 0');
+                    return;
+                }
+                
+                setError('');
+                setIsCharging(true);
+                setChargeResults(null);
+                
+                try {
+                    const response = await fetch(`${API_URL}/charge`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            apiKey,
+                            amount: parseFloat(amount),
+                            currency,
+                            description,
+                            maxCustomers: parseInt(maxCustomers),
+                            delay: parseFloat(delay),
+                            skipSpecialPayments: true
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        setChargeResults(data);
+                    } else {
+                        setError(data.error || 'Failed to charge');
+                    }
+                } catch (error) {
+                    setError('Failed: ' + error.message);
+                } finally {
+                    setIsCharging(false);
+                }
+            }
+            
+            return (
+                <div className="container">
+                    <div className="header">
+                        <h1>Stripe</h1>
+                        <p>Batch customer charging</p>
+                    </div>
+                    
+                    <div className="status-bar">
+                        <span className={`badge ${backendStatus === 'connected' ? 'success' : 'error'}`}>
+                            {backendStatus === 'connected' ? '● Online' : '● Offline'}
+                        </span>
+                        {keyValidated && (
+                            <>
+                                <span className={`badge ${stripeMode === 'test' ? 'warning' : 'error'}`}>
+                                    {stripeMode === 'test' ? 'Test' : 'Live'}
+                                </span>
+                                <span className="badge info">
+                                    Auto-Skip: Link/GPay/APay
+                                </span>
+                            </>
+                        )}
+                    </div>
+                    
+                    {!keyValidated ? (
+                        <div className="card">
+                            <div className="card-title">🔐 API Key</div>
+                            
+                            <div className="form-group">
+                                <label>Stripe Secret Key</label>
+                                <input 
+                                    type="password"
+                                    placeholder="sk_test_... or sk_live_..."
+                                    value={apiKey}
+                                    onChange={(e) => setApiKey(e.target.value)}
+                                    onKeyPress={(e) => e.key === 'Enter' && validateApiKey()}
+                                />
+                                <small>
+                                    Get from <a href="https://dashboard.stripe.com/apikeys" target="_blank" style={{color: '#667eea'}}>dashboard.stripe.com</a>
+                                </small>
+                            </div>
+                            
+                            {error && <div className="alert error">{error}</div>}
+                            
+                            <button className="btn btn-primary" onClick={validateApiKey}>
+                                Validate
+                            </button>
+                        </div>
+                    ) : (
+                        <>
+                            {customerStats && (
+                                <div className="stats-grid">
+                                    <div className="stat-card blue">
+                                        <div className="stat-label">Customers</div>
+                                        <div className="stat-value">{customerStats.total}</div>
+                                    </div>
+                                    <div className="stat-card green">
+                                        <div className="stat-label">Chargeable</div>
+                                        <div className="stat-value">{customerStats.withPayment}</div>
+                                    </div>
+                                    {chargeResults && (
+                                        <>
+                                            <div className="stat-card green">
+                                                <div className="stat-label">Success</div>
+                                                <div className="stat-value">{chargeResults.successful}</div>
+                                            </div>
+                                            <div className="stat-card red">
+                                                <div className="stat-label">Failed</div>
+                                                <div className="stat-value">{chargeResults.failed}</div>
+                                            </div>
+                                            <div className="stat-card orange">
+                                                <div className="stat-label">Charged</div>
+                                                <div className="stat-value">${(chargeResults.successful * parseFloat(amount)).toFixed(2)}</div>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            )}
+                            
+                            <div className="layout">
+                                <div className="card">
+                                    <div className="card-title">⚙️ Configuration</div>
+                                    
+                                    {stripeMode === 'live' && (
+                                        <div className="alert warning">
+                                            ⚠️ Live mode - Real charges
+                                        </div>
+                                    )}
+                                    
+                                    <div className="form-grid">
+                                        <div className="form-group">
+                                            <label>Amount</label>
+                                            <input 
+                                                type="number"
+                                                step="0.01"
+                                                value={amount}
+                                                onChange={(e) => setAmount(e.target.value)}
+                                            />
+                                        </div>
+                                        
+                                        <div className="form-group">
+                                            <label>Currency</label>
+                                            <select value={currency} onChange={(e) => setCurrency(e.target.value)}>
+                                                <option value="usd">USD</option>
+                                                <option value="eur">EUR</option>
+                                                <option value="gbp">GBP</option>
+                                                <option value="cad">CAD</option>
+                                                <option value="aud">AUD</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="form-group">
+                                        <label>Description</label>
+                                        <input 
+                                            type="text"
+                                            value={description}
+                                            onChange={(e) => setDescription(e.target.value)}
+                                        />
+                                    </div>
+                                    
+                                    <div className="form-grid">
+                                        <div className="form-group">
+                                            <label>Max (0 = all)</label>
+                                            <input 
+                                                type="number"
+                                                value={maxCustomers}
+                                                onChange={(e) => setMaxCustomers(e.target.value)}
+                                            />
+                                        </div>
+                                        
+                                        <div className="form-group">
+                                            <label>Delay (sec)</label>
+                                            <input 
+                                                type="number"
+                                                step="0.1"
+                                                value={delay}
+                                                onChange={(e) => setDelay(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+                                    
+                                    {error && <div className="alert error">{error}</div>}
+                                    
+                                    <button 
+                                        className="btn btn-danger"
+                                        onClick={startCharging}
+                                        disabled={isCharging}
+                                    >
+                                        {isCharging ? (
+                                            <>
+                                                <div className="spinner"></div>
+                                                Charging...
+                                            </>
+                                        ) : (
+                                            <>⚡ Start Charging</>
+                                        )}
+                                    </button>
+                                </div>
+                                
+                                <div className="card">
+                                    <div className="card-title">📊 Results</div>
+                                    
+                                    {!chargeResults && !isCharging && (
+                                        <div className="empty">
+                                            <div className="empty-icon">📭</div>
+                                            <div className="empty-text">No results yet</div>
+                                        </div>
+                                    )}
+                                    
+                                    {isCharging && (
+                                        <div className="alert info">
+                                            Processing charges...
+                                        </div>
+                                    )}
+                                    
+                                    {chargeResults && (
+                                        <>
+                                            {chargeResults.successful > 0 && (
+                                                <div className="alert success">
+                                                    ✓ {chargeResults.successful} charged successfully
+                                                </div>
+                                            )}
+                                            
+                                            {chargeResults.failed > 0 && (
+                                                <div className="alert error">
+                                                    ✗ {chargeResults.failed} failed
+                                                </div>
+                                            )}
+                                            
+                                            {chargeResults.skipped_special_payment > 0 && (
+                                                <div className="alert info">
+                                                    🚫 Skipped {chargeResults.skipped_special_payment} Link/GPay/APay payment{chargeResults.skipped_special_payment !== 1 ? 's' : ''}
+                                                </div>
+                                            )}
+                                            
+                                            <div className="results">
+                                                {chargeResults.charges.map((charge, i) => (
+                                                    <div key={i} className={`result-item ${charge.status}`}>
+                                                        <div style={{marginBottom: '8px'}}>
+                                                            <div className="customer-name">{charge.customer.name}</div>
+                                                            <div className="customer-email">{charge.customer.email}</div>
+                                                            
+                                                            {charge.status === 'success' && (
+                                                                <>
+                                                                    <div className="amount">
+                                                                        <span style={{color: '#10b981'}}>
+                                                                            +${charge.amount.toFixed(2)} {charge.currency}
+                                                                        </span>
+                                                                    </div>
+                                                                    
+                                                                    {charge.card && (
+                                                                        <div className="card-badge">
+                                                                            💳 {charge.card.brand.toUpperCase()} ···· {charge.card.last4}
+                                                                        </div>
+                                                                    )}
+                                                                    
+                                                                    <div className="charge-details">
+                                                                        <div className="detail-item">
+                                                                            <div className="detail-label">Charge ID</div>
+                                                                            <div className="detail-value">{charge.chargeId.substring(0, 20)}...</div>
+                                                                        </div>
+                                                                        <div className="detail-item">
+                                                                            <div className="detail-label">Time</div>
+                                                                            <div className="detail-value">
+                                                                                {new Date(charge.timestamp).toLocaleTimeString()}
+                                                                            </div>
+                                                                        </div>
+                                                                        {charge.card && charge.card.exp_month && (
+                                                                            <div className="detail-item">
+                                                                                <div className="detail-label">Card Expires</div>
+                                                                                <div className="detail-value">
+                                                                                    {charge.card.exp_month}/{charge.card.exp_year}
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+                                                                        <div className="detail-item">
+                                                                            <div className="detail-label">Description</div>
+                                                                            <div className="detail-value">{charge.description}</div>
+                                                                        </div>
+                                                                    </div>
+                                                                </>
+                                                            )}
+                                                            
+                                                            {charge.status === 'failed' && (
+                                                                <>
+                                                                    <div className="amount">
+                                                                        <span style={{color: '#dc2626', fontSize: '1.2rem'}}>✗ FAILED</span>
+                                                                    </div>
+                                                                    <div className="error-msg">
+                                                                        <strong>Error:</strong> {charge.error}
+                                                                        {charge.errorCode && charge.errorCode !== 'unknown' && (
+                                                                            <div style={{marginTop: '6px', fontSize: '0.7rem'}}>
+                                                                                Code: {charge.errorCode}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="charge-details">
+                                                                        <div className="detail-item">
+                                                                            <div className="detail-label">Time</div>
+                                                                            <div className="detail-value">
+                                                                                {new Date(charge.timestamp).toLocaleTimeString()}
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="detail-item">
+                                                                            <div className="detail-label">Customer ID</div>
+                                                                            <div className="detail-value">{charge.customer.id}</div>
+                                                                        </div>
+                                                                    </div>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
