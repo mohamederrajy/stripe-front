@@ -467,6 +467,7 @@
             const [delay, setDelay] = useState('1.0');
             
             const [customerStats, setCustomerStats] = useState(null);
+            const [chargeableCustomers, setChargeableCustomers] = useState([]);
             const [isCharging, setIsCharging] = useState(false);
             const [chargeResults, setChargeResults] = useState(null);
             const [error, setError] = useState('');
@@ -572,6 +573,9 @@
                     if (data.success) {
                         // Update with full stats
                         setCustomerStats(data);
+                        // Store chargeable customers for later use (no need to check again!)
+                        setChargeableCustomers(data.customers || []);
+                        console.log(`✅ Stored ${data.customers?.length || 0} chargeable customers for instant charging!`);
                     }
                 } catch (error) {
                     console.error(error);
@@ -599,9 +603,12 @@
                             description,
                             maxCustomers: parseInt(maxCustomers),
                             delay: parseFloat(delay),
+                            customers: chargeableCustomers,  // Pass pre-filtered customers (INSTANT!)
                             skipSpecialPayments: true
                         })
                     });
+                    
+                    console.log(`⚡️ Charging ${chargeableCustomers.length} pre-filtered customers (no re-checking!)`);
                     
                     const data = await response.json();
                     
