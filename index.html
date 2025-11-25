@@ -870,8 +870,15 @@
                                     )}
                                     
                                     {isCharging && (
-                                        <div className="alert info">
-                                            Processing charges...
+                                        <div className="alert info" style={{ 
+                                            background: 'linear-gradient(90deg, rgba(102, 126, 234, 0.2), rgba(59, 130, 246, 0.2))',
+                                            borderColor: '#667eea',
+                                            fontSize: '1rem',
+                                            fontWeight: '600',
+                                            animation: 'pulse 1.5s ease-in-out infinite'
+                                        }}>
+                                            <div className="loading-spinner" style={{ width: '20px', height: '20px', borderWidth: '3px' }}></div>
+                                            <span>⚡️ Charging in progress... Processing customers in parallel!</span>
                                         </div>
                                     )}
                                     
