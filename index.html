@@ -51,7 +51,8 @@
         .status-bar {
             display: flex;
             gap: 10px;
-            justify-content: center;
+            justify-content: space-between;
+            align-items: center;
             flex-wrap: wrap;
             margin-bottom: 25px;
         }
@@ -448,6 +449,12 @@
         const API_URL = 'https://api.stripech.dev';
         
         function App() {
+            // Authentication
+            const [isAuthenticated, setIsAuthenticated] = useState(false);
+            const [loginEmail, setLoginEmail] = useState('');
+            const [loginPassword, setLoginPassword] = useState('');
+            const [loginError, setLoginError] = useState('');
+            
             const [backendStatus, setBackendStatus] = useState('checking');
             const [apiKey, setApiKey] = useState('');
             const [keyValidated, setKeyValidated] = useState(false);
@@ -465,8 +472,36 @@
             const [error, setError] = useState('');
             
             useEffect(() => {
-                checkBackend();
+                // Check if already logged in (from localStorage)
+                const savedAuth = localStorage.getItem('stripech_auth');
+                if (savedAuth === 'true') {
+                    setIsAuthenticated(true);
+                    checkBackend();
+                }
             }, []);
+            
+            function handleLogin(e) {
+                e.preventDefault();
+                setLoginError('');
+                
+                // Check credentials
+                if (loginEmail === 'admin@stripech.dev' && loginPassword === 'tW+_@vzyz4LYYTj') {
+                    setIsAuthenticated(true);
+                    localStorage.setItem('stripech_auth', 'true');
+                    checkBackend();
+                } else {
+                    setLoginError('Invalid email or password');
+                }
+            }
+            
+            function handleLogout() {
+                setIsAuthenticated(false);
+                localStorage.removeItem('stripech_auth');
+                setKeyValidated(false);
+                setApiKey('');
+                setCustomerStats(null);
+                setChargeResults(null);
+            }
             
             async function checkBackend() {
                 try {
@@ -582,6 +617,63 @@
                 }
             }
             
+            // Show login page if not authenticated
+            if (!isAuthenticated) {
+                return (
+                    <div className="container">
+                        <div className="header">
+                            <h1>🔐 Stripe Admin Login</h1>
+                            <p>Secure access to batch charging dashboard</p>
+                        </div>
+                        
+                        <div className="card" style={{ maxWidth: '450px', margin: '0 auto' }}>
+                            <div className="card-title">Administrator Login</div>
+                            
+                            {loginError && (
+                                <div className="alert error">
+                                    ❌ {loginError}
+                                </div>
+                            )}
+                            
+                            <form onSubmit={handleLogin}>
+                                <div className="form-group">
+                                    <label>Email Address</label>
+                                    <input 
+                                        type="email"
+                                        value={loginEmail}
+                                        onChange={(e) => setLoginEmail(e.target.value)}
+                                        placeholder="admin@stripech.dev"
+                                        required
+                                    />
+                                </div>
+                                
+                                <div className="form-group">
+                                    <label>Password</label>
+                                    <input 
+                                        type="password"
+                                        value={loginPassword}
+                                        onChange={(e) => setLoginPassword(e.target.value)}
+                                        placeholder="Enter your password"
+                                        required
+                                    />
+                                </div>
+                                
+                                <button type="submit" className="btn btn-primary">
+                                    🔓 Login to Dashboard
+                                </button>
+                            </form>
+                            
+                            <div style={{ marginTop: '20px', padding: '15px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '8px', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
+                                <small style={{ color: '#60a5fa', display: 'block', textAlign: 'center' }}>
+                                    🔒 Secure admin access required
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+            
+            // Show dashboard if authenticated
             return (
                 <div className="container">
                     <div className="header">
@@ -590,19 +682,39 @@
                     </div>
                     
                     <div className="status-bar">
-                        <span className={`badge ${backendStatus === 'connected' ? 'success' : 'error'}`}>
-                            {backendStatus === 'connected' ? '● Online' : '● Offline'}
-                        </span>
-                        {keyValidated && (
-                            <>
-                                <span className={`badge ${stripeMode === 'test' ? 'warning' : 'error'}`}>
-                                    {stripeMode === 'test' ? 'Test' : 'Live'}
-                                </span>
-                                <span className="badge info">
-                                    Auto-Skip: Link/GPay/APay
-                                </span>
-                            </>
-                        )}
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                            <span className={`badge ${backendStatus === 'connected' ? 'success' : 'error'}`}>
+                                {backendStatus === 'connected' ? '● Online' : '● Offline'}
+                            </span>
+                            {keyValidated && (
+                                <>
+                                    <span className={`badge ${stripeMode === 'test' ? 'warning' : 'error'}`}>
+                                        {stripeMode === 'test' ? 'Test' : 'Live'}
+                                    </span>
+                                    <span className="badge info">
+                                        Auto-Skip: Link/GPay/APay
+                                    </span>
+                                </>
+                            )}
+                        </div>
+                        <button 
+                            onClick={handleLogout}
+                            style={{ 
+                                padding: '6px 12px', 
+                                background: 'rgba(239, 68, 68, 0.2)', 
+                                border: '1px solid #ef4444',
+                                borderRadius: '6px',
+                                color: '#f87171',
+                                cursor: 'pointer',
+                                fontSize: '0.75rem',
+                                fontWeight: '600',
+                                transition: 'all 0.2s'
+                            }}
+                            onMouseOver={(e) => e.target.style.background = 'rgba(239, 68, 68, 0.3)'}
+                            onMouseOut={(e) => e.target.style.background = 'rgba(239, 68, 68, 0.2)'}
+                        >
+                            🚪 Logout
+                        </button>
                     </div>
                     
                     {!keyValidated ? (
