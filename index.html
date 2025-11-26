@@ -580,19 +580,35 @@
                     }
                     
                     // STAGE 3: Load transaction stats (in parallel)
-                    const transResponse = await fetch(`${API_URL}/get-transactions`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ apiKey })
-                    });
-                    
-                    const transData = await transResponse.json();
-                    if (transData.success) {
-                        setTransactionStats(transData);
-                        console.log(`✅ Loaded transaction stats: ${transData.payments.all} payments, ${transData.payouts.total} payouts`);
+                    try {
+                        console.log('🔄 Loading transaction stats...');
+                        const transResponse = await fetch(`${API_URL}/get-transactions`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ apiKey })
+                        });
+                        
+                        console.log('Transaction response status:', transResponse.status);
+                        const transData = await transResponse.json();
+                        console.log('Transaction data:', transData);
+                        
+                        if (transData.success) {
+                            setTransactionStats(transData);
+                            console.log(`✅ Loaded transaction stats: ${transData.payments.all} payments, ${transData.payouts.total} payouts`);
+                        } else {
+                            console.error('❌ Transaction stats failed:', transData.error);
+                        }
+                    } catch (transError) {
+                        console.error('❌ Error loading transaction stats:', transError);
+                        // Set empty stats so cards still show
+                        setTransactionStats({
+                            success: true,
+                            payments: { all: 0, succeeded: 0, refunded: 0, disputed: 0, failed: 0 },
+                            payouts: { total: 0, paid: 0, pending: 0, failed: 0, amount: 0 }
+                        });
                     }
                 } catch (error) {
-                    console.error(error);
+                    console.error('❌ General error:', error);
                 }
             }
             
