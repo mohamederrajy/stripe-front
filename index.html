@@ -1487,28 +1487,34 @@
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        {transactionStats.payments.details
-                                                            .slice((paymentPage - 1) * ITEMS_PER_PAGE, paymentPage * ITEMS_PER_PAGE)
-                                                            .map((payment, idx) => {
+                                                        {(() => {
+                                                            const payments = transactionStats.payments.details.slice((paymentPage - 1) * ITEMS_PER_PAGE, paymentPage * ITEMS_PER_PAGE);
+                                                            console.log('💳 Rendering payments page:', paymentPage);
+                                                            console.log('💳 Total payments on page:', payments.length);
+                                                            console.log('💳 Refunded payments Set:', Array.from(refundedPayments));
+                                                            console.log('💳 Payment IDs on page:', payments.map(p => p.id));
+                                                            return payments.map((payment, idx) => {
                                                                 const isRefunding = refundedPayments.has(payment.id);
-                                                                if (idx === 0) {
-                                                                    console.log('🔍 Checking payment:', payment.id, 'isRefunding:', isRefunding, 'refundedPayments size:', refundedPayments.size);
-                                                                }
+                                                                console.log(`💳 Payment ${idx}: ID="${payment.id}" status="${payment.status}" isRefunding=${isRefunding}`);
                                                                 return (
                                                             <tr key={idx} style={{ borderBottom: '1px solid #334155' }}>
                                                                 <td style={{ padding: '12px 8px', color: '#f8fafc' }}>${payment.amount.toFixed(2)}</td>
                                                                 <td style={{ padding: '12px 8px', color: '#94a3b8' }}>{payment.currency}</td>
-                                                                <td style={{ padding: '12px 8px' }}>
+                                                                <td style={{ padding: '12px 8px', background: isRefunding ? 'rgba(251, 146, 60, 0.05)' : 'transparent' }}>
                                                                     {isRefunding ? (
                                                                         <span style={{
-                                                                            padding: '4px 8px',
-                                                                            borderRadius: '4px',
-                                                                            fontSize: '0.75rem',
-                                                                            fontWeight: '600',
-                                                                            background: 'rgba(251, 146, 60, 0.2)',
-                                                                            color: '#fb923c'
+                                                                            padding: '6px 12px',
+                                                                            borderRadius: '6px',
+                                                                            fontSize: '0.875rem',
+                                                                            fontWeight: '700',
+                                                                            background: 'rgba(251, 146, 60, 0.3)',
+                                                                            color: '#fff',
+                                                                            border: '2px solid #fb923c',
+                                                                            display: 'inline-flex',
+                                                                            alignItems: 'center',
+                                                                            gap: '6px'
                                                                         }}>
-                                                                            Refund pending
+                                                                            ⏳ REFUND PENDING
                                                                         </span>
                                                                     ) : (
                                                                         <span style={{
@@ -1563,7 +1569,8 @@
                                                                 </td>
                                                             </tr>
                                                             );
-                                                        })}
+                                                        });
+                                                        })()}
                                                     </tbody>
                                                 </table>
                                             </div>
