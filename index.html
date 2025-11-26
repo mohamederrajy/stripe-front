@@ -476,6 +476,48 @@
             const [paymentPage, setPaymentPage] = useState(1);
             const [payoutPage, setPayoutPage] = useState(1);
             const [isCharging, setIsCharging] = useState(false);
+            
+            // Currency helper function
+            const getCurrencySymbol = (currency) => {
+                const symbols = {
+                    'USD': '$',
+                    'EUR': '€',
+                    'GBP': '£',
+                    'JPY': '¥',
+                    'CAD': 'CA$',
+                    'AUD': 'A$',
+                    'CHF': 'CHF',
+                    'CNY': '¥',
+                    'INR': '₹',
+                    'MXN': 'MX$',
+                    'BRL': 'R$',
+                    'ZAR': 'R',
+                    'SEK': 'kr',
+                    'NOK': 'kr',
+                    'DKK': 'kr',
+                    'PLN': 'zł',
+                    'CZK': 'Kč',
+                    'HUF': 'Ft',
+                    'RUB': '₽',
+                    'TRY': '₺',
+                    'SGD': 'S$',
+                    'HKD': 'HK$',
+                    'NZD': 'NZ$',
+                    'KRW': '₩',
+                    'THB': '฿',
+                    'MYR': 'RM',
+                    'PHP': '₱',
+                    'IDR': 'Rp',
+                    'AED': 'د.إ',
+                    'SAR': '﷼'
+                };
+                return symbols[currency?.toUpperCase()] || currency?.toUpperCase() || '$';
+            };
+            
+            const formatAmount = (amount, currency) => {
+                const symbol = getCurrencySymbol(currency);
+                return `${symbol}${amount.toLocaleString()}`;
+            };
             const [chargeResults, setChargeResults] = useState(null);
             const [error, setError] = useState('');
             
@@ -649,7 +691,8 @@
                     
                     if (data.success) {
                         setOverviewData(data);
-                        console.log(`✅ Overview loaded: Balance=$${data.balance.available}, Next Payout=$${data.next_payout.amount}, Graphs=${data.graphs.gross_volume.length} points`);
+                        console.log(`✅ Overview loaded (${data.currency}): Balance=${data.balance.available}, Next Payout=${data.next_payout.amount}, Graphs=${data.graphs.gross_volume.length} points`);
+                        console.log('💱 Currency:', data.currency);
                         console.log('📊 Gross Volume Data:', data.graphs.gross_volume);
                         console.log('📊 Net Volume Data:', data.graphs.net_volume);
                         console.log('💰 Balance:', data.balance);
@@ -1133,38 +1176,38 @@
                                             <div className="stats-grid" style={{ marginBottom: '20px' }}>
                                                 <div className="stat-card green">
                                                     <div className="stat-label">Succeeded</div>
-                                                    <div className="stat-value" style={{ fontSize: '1.5rem' }}>${overviewData.payments.succeeded.toLocaleString()}</div>
+                                                    <div className="stat-value" style={{ fontSize: '1.5rem' }}>{formatAmount(overviewData.payments.succeeded, overviewData.currency)}</div>
                                                 </div>
                                                 <div className="stat-card orange">
                                                     <div className="stat-label">Uncaptured</div>
-                                                    <div className="stat-value" style={{ fontSize: '1.5rem' }}>${overviewData.payments.uncaptured.toLocaleString()}</div>
+                                                    <div className="stat-value" style={{ fontSize: '1.5rem' }}>{formatAmount(overviewData.payments.uncaptured, overviewData.currency)}</div>
                                                 </div>
                                                 <div className="stat-card orange">
                                                     <div className="stat-label">Refunded</div>
-                                                    <div className="stat-value" style={{ fontSize: '1.5rem' }}>${overviewData.payments.refunded.toLocaleString()}</div>
+                                                    <div className="stat-value" style={{ fontSize: '1.5rem' }}>{formatAmount(overviewData.payments.refunded, overviewData.currency)}</div>
                                                 </div>
                                                 <div className="stat-card red">
                                                     <div className="stat-label">Blocked</div>
-                                                    <div className="stat-value" style={{ fontSize: '1.5rem' }}>${overviewData.payments.blocked.toLocaleString()}</div>
+                                                    <div className="stat-value" style={{ fontSize: '1.5rem' }}>{formatAmount(overviewData.payments.blocked, overviewData.currency)}</div>
                                                 </div>
                                                 <div className="stat-card red">
                                                     <div className="stat-label">Failed</div>
-                                                    <div className="stat-value" style={{ fontSize: '1.5rem' }}>${overviewData.payments.failed.toLocaleString()}</div>
+                                                    <div className="stat-value" style={{ fontSize: '1.5rem' }}>{formatAmount(overviewData.payments.failed, overviewData.currency)}</div>
                                                 </div>
                                             </div>
                                             
                                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '15px', marginBottom: '20px' }}>
                                                 <div style={{ background: '#1e293b', padding: '15px', borderRadius: '8px', border: '1px solid #334155' }}>
-                                                    <div style={{ color: '#cbd5e1', fontSize: '0.875rem', fontWeight: '600', marginBottom: '10px' }}>💰 Balance</div>
-                                                    <div style={{ color: '#f8fafc', fontSize: '1.5rem', fontWeight: '800' }}>${overviewData.balance.available.toLocaleString()}</div>
+                                                    <div style={{ color: '#cbd5e1', fontSize: '0.875rem', fontWeight: '600', marginBottom: '10px' }}>💰 Balance ({overviewData.currency})</div>
+                                                    <div style={{ color: '#f8fafc', fontSize: '1.5rem', fontWeight: '800' }}>{formatAmount(overviewData.balance.available, overviewData.currency)}</div>
                                                     <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginTop: '5px' }}>
-                                                        Pending: ${overviewData.balance.pending.toLocaleString()}
+                                                        Pending: {formatAmount(overviewData.balance.pending, overviewData.currency)}
                                                     </div>
                                                 </div>
                                                 
                                                 <div style={{ background: '#1e293b', padding: '15px', borderRadius: '8px', border: '1px solid #334155' }}>
-                                                    <div style={{ color: '#cbd5e1', fontSize: '0.875rem', fontWeight: '600', marginBottom: '10px' }}>📅 Next Payout</div>
-                                                    <div style={{ color: '#f8fafc', fontSize: '1.5rem', fontWeight: '800' }}>${overviewData.next_payout.amount.toLocaleString()}</div>
+                                                    <div style={{ color: '#cbd5e1', fontSize: '0.875rem', fontWeight: '600', marginBottom: '10px' }}>📅 Next Payout ({overviewData.currency})</div>
+                                                    <div style={{ color: '#f8fafc', fontSize: '1.5rem', fontWeight: '800' }}>{formatAmount(overviewData.next_payout.amount, overviewData.currency)}</div>
                                                     <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginTop: '5px' }}>
                                                         {overviewData.next_payout.date}
                                                     </div>
@@ -1191,6 +1234,7 @@
                                                             {overviewData.graphs.gross_volume.slice(-30).map((item, idx) => {
                                                                 const maxAmount = Math.max(...overviewData.graphs.gross_volume.map(d => d.amount), 1);
                                                                 const height = Math.max((item.amount / maxAmount) * 100, 2);
+                                                                const symbol = getCurrencySymbol(overviewData.currency);
                                                                 return (
                                                                     <div key={idx} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end' }}>
                                                                         <div
@@ -1203,7 +1247,7 @@
                                                                                 transition: 'all 0.3s',
                                                                                 cursor: 'pointer'
                                                                             }}
-                                                                            title={`${item.date}: $${item.amount.toFixed(2)}`}
+                                                                            title={`${item.date}: ${symbol}${item.amount.toFixed(2)}`}
                                                                         />
                                                                     </div>
                                                                 );
@@ -1230,6 +1274,7 @@
                                                             {overviewData.graphs.net_volume.slice(-30).map((item, idx) => {
                                                                 const maxAmount = Math.max(...overviewData.graphs.net_volume.map(d => d.amount), 1);
                                                                 const height = Math.max((item.amount / maxAmount) * 100, 2);
+                                                                const symbol = getCurrencySymbol(overviewData.currency);
                                                                 return (
                                                                     <div key={idx} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end' }}>
                                                                         <div
@@ -1242,7 +1287,7 @@
                                                                                 transition: 'all 0.3s',
                                                                                 cursor: 'pointer'
                                                                             }}
-                                                                            title={`${item.date}: $${item.amount.toFixed(2)}`}
+                                                                            title={`${item.date}: ${symbol}${item.amount.toFixed(2)}`}
                                                                         />
                                                                     </div>
                                                                 );
