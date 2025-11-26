@@ -1522,10 +1522,21 @@
                                                                             borderRadius: '4px',
                                                                             fontSize: '0.75rem',
                                                                             fontWeight: '600',
-                                                                            background: payment.status === 'succeeded' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                                                                            color: payment.status === 'succeeded' ? '#10b981' : '#ef4444'
+                                                                            background: 
+                                                                                payment.status === 'succeeded' ? 'rgba(16, 185, 129, 0.2)' :
+                                                                                payment.status === 'refunded' ? 'rgba(168, 85, 247, 0.2)' :
+                                                                                payment.status === 'partially_refunded' ? 'rgba(168, 85, 247, 0.15)' :
+                                                                                'rgba(239, 68, 68, 0.2)',
+                                                                            color: 
+                                                                                payment.status === 'succeeded' ? '#10b981' :
+                                                                                payment.status === 'refunded' ? '#a855f7' :
+                                                                                payment.status === 'partially_refunded' ? '#a855f7' :
+                                                                                '#ef4444'
                                                                         }}>
-                                                                            {payment.status}
+                                                                            {payment.status === 'refunded' ? '💜 Refunded' :
+                                                                             payment.status === 'partially_refunded' ? '💜 Partial Refund' :
+                                                                             payment.status === 'succeeded' ? '✓ Succeeded' :
+                                                                             payment.status}
                                                                         </span>
                                                                     )}
                                                                 </td>
@@ -1537,7 +1548,7 @@
                                                                     {payment.decline_reason}
                                                                 </td>
                                                                 <td style={{ padding: '12px 8px', textAlign: 'center' }}>
-                                                                    {payment.status === 'succeeded' && !isRefunding && (
+                                                                    {payment.status === 'succeeded' && !isRefunding && !payment.status.includes('refund') && (
                                                                         <button
                                                                             onClick={() => handleRefund(payment.id, payment.amount, payment.currency)}
                                                                             style={{
