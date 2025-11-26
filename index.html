@@ -650,6 +650,10 @@
                     if (data.success) {
                         setOverviewData(data);
                         console.log(`✅ Overview loaded: Balance=$${data.balance.available}, Next Payout=$${data.next_payout.amount}, Graphs=${data.graphs.gross_volume.length} points`);
+                        console.log('📊 Gross Volume Data:', data.graphs.gross_volume);
+                        console.log('📊 Net Volume Data:', data.graphs.net_volume);
+                        console.log('💰 Balance:', data.balance);
+                        console.log('📅 Next Payout:', data.next_payout);
                     } else {
                         console.error('❌ Overview failed:', data.error);
                     }
@@ -1177,20 +1181,23 @@
                                                 </div>
                                             </div>
                                             
-                                            {overviewData.graphs.gross_volume && overviewData.graphs.gross_volume.length > 0 && (
+                                            {overviewData.graphs.gross_volume && overviewData.graphs.gross_volume.length > 0 ? (
                                                 <div style={{ marginTop: '20px' }}>
-                                                    <div style={{ color: '#cbd5e1', fontSize: '0.875rem', fontWeight: '600', marginBottom: '10px' }}>📈 Gross Volume</div>
+                                                    <div style={{ color: '#cbd5e1', fontSize: '0.875rem', fontWeight: '600', marginBottom: '10px' }}>
+                                                        📈 Gross Volume ({overviewData.graphs.gross_volume.length} days)
+                                                    </div>
                                                     <div style={{ background: '#1e293b', padding: '15px', borderRadius: '8px', border: '1px solid #334155', overflowX: 'auto' }}>
                                                         <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', minWidth: '600px', height: '150px' }}>
                                                             {overviewData.graphs.gross_volume.slice(-30).map((item, idx) => {
                                                                 const maxAmount = Math.max(...overviewData.graphs.gross_volume.map(d => d.amount), 1);
                                                                 const height = Math.max((item.amount / maxAmount) * 100, 2);
                                                                 return (
-                                                                    <div key={idx} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                                                    <div key={idx} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end' }}>
                                                                         <div
                                                                             style={{
                                                                                 width: '100%',
                                                                                 height: `${height}%`,
+                                                                                minHeight: '2px',
                                                                                 background: 'linear-gradient(to top, #667eea, #764ba2)',
                                                                                 borderRadius: '4px 4px 0 0',
                                                                                 transition: 'all 0.3s',
@@ -1207,22 +1214,29 @@
                                                         </div>
                                                     </div>
                                                 </div>
+                                            ) : (
+                                                <div style={{ marginTop: '20px', padding: '20px', background: '#1e293b', borderRadius: '8px', border: '1px solid #334155', textAlign: 'center', color: '#64748b' }}>
+                                                    📈 No gross volume data for this period
+                                                </div>
                                             )}
                                             
-                                            {overviewData.graphs.net_volume && overviewData.graphs.net_volume.length > 0 && (
+                                            {overviewData.graphs.net_volume && overviewData.graphs.net_volume.length > 0 ? (
                                                 <div style={{ marginTop: '20px' }}>
-                                                    <div style={{ color: '#cbd5e1', fontSize: '0.875rem', fontWeight: '600', marginBottom: '10px' }}>📊 Net Volume</div>
+                                                    <div style={{ color: '#cbd5e1', fontSize: '0.875rem', fontWeight: '600', marginBottom: '10px' }}>
+                                                        📊 Net Volume ({overviewData.graphs.net_volume.length} days)
+                                                    </div>
                                                     <div style={{ background: '#1e293b', padding: '15px', borderRadius: '8px', border: '1px solid #334155', overflowX: 'auto' }}>
                                                         <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', minWidth: '600px', height: '150px' }}>
                                                             {overviewData.graphs.net_volume.slice(-30).map((item, idx) => {
                                                                 const maxAmount = Math.max(...overviewData.graphs.net_volume.map(d => d.amount), 1);
                                                                 const height = Math.max((item.amount / maxAmount) * 100, 2);
                                                                 return (
-                                                                    <div key={idx} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                                                    <div key={idx} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end' }}>
                                                                         <div
                                                                             style={{
                                                                                 width: '100%',
                                                                                 height: `${height}%`,
+                                                                                minHeight: '2px',
                                                                                 background: 'linear-gradient(to top, #10b981, #34d399)',
                                                                                 borderRadius: '4px 4px 0 0',
                                                                                 transition: 'all 0.3s',
@@ -1238,6 +1252,10 @@
                                                             Last {overviewData.graphs.net_volume.slice(-30).length} days
                                                         </div>
                                                     </div>
+                                                </div>
+                                            ) : (
+                                                <div style={{ marginTop: '20px', padding: '20px', background: '#1e293b', borderRadius: '8px', border: '1px solid #334155', textAlign: 'center', color: '#64748b' }}>
+                                                    📊 No net volume data for this period
                                                 </div>
                                             )}
                                         </>
