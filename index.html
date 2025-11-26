@@ -160,6 +160,17 @@
             50% { opacity: 1; }
         }
         
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
         /* Form */
         .form-grid {
             display: grid;
@@ -476,6 +487,9 @@
             const [paymentPage, setPaymentPage] = useState(1);
             const [payoutPage, setPayoutPage] = useState(1);
             const [isCharging, setIsCharging] = useState(false);
+            const [showRefundModal, setShowRefundModal] = useState(false);
+            const [refundModalData, setRefundModalData] = useState(null);
+            const [isRefunding, setIsRefunding] = useState(false);
             
             // Currency helper function
             const getCurrencySymbol = (currency) => {
@@ -707,28 +721,30 @@
                 }
             }
             
-            async function handleRefund(paymentIntentId, amount, currency) {
-                // Confirmation dialog
-                const confirmRefund = confirm(
-                    `Are you sure you want to refund this payment?\n\n` +
-                    `Amount: ${getCurrencySymbol(currency)}${amount.toFixed(2)} ${currency}\n` +
-                    `Payment ID: ${paymentIntentId}\n\n` +
-                    `This action cannot be undone!`
-                );
-                
-                if (!confirmRefund) {
-                    return;
-                }
+            function handleRefund(paymentIntentId, amount, currency) {
+                // Show confirmation modal
+                setRefundModalData({
+                    paymentIntentId,
+                    amount,
+                    currency,
+                    status: 'confirm' // confirm, processing, success, error
+                });
+                setShowRefundModal(true);
+            }
+            
+            async function processRefund() {
+                setIsRefunding(true);
+                setRefundModalData(prev => ({ ...prev, status: 'processing' }));
                 
                 try {
-                    console.log(`💸 Refunding payment: ${paymentIntentId}`);
+                    console.log(`💸 Refunding payment: ${refundModalData.paymentIntentId}`);
                     
                     const response = await fetch(`${API_URL}/refund`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ 
                             apiKey, 
-                            paymentIntentId,
+                            paymentIntentId: refundModalData.paymentIntentId,
                             reason: 'requested_by_customer'
                         })
                     });
@@ -736,20 +752,43 @@
                     const data = await response.json();
                     
                     if (data.success) {
-                        alert(`✅ Refund successful!\n\nRefund ID: ${data.refund.id}\nAmount: ${getCurrencySymbol(data.refund.currency)}${data.refund.amount.toFixed(2)} ${data.refund.currency}\nStatus: ${data.refund.status}`);
+                        setRefundModalData(prev => ({ 
+                            ...prev, 
+                            status: 'success',
+                            refundId: data.refund.id,
+                            refundStatus: data.refund.status
+                        }));
                         
                         // Reload transaction stats to reflect the refund
-                        await getTransactionStats();
+                        setTimeout(() => {
+                            getTransactionStats();
+                        }, 1000);
                         
                         console.log('✅ Refund completed:', data.refund);
                     } else {
-                        alert(`❌ Refund failed!\n\n${data.error}`);
+                        setRefundModalData(prev => ({ 
+                            ...prev, 
+                            status: 'error',
+                            errorMessage: data.error
+                        }));
                         console.error('❌ Refund failed:', data.error);
                     }
                 } catch (error) {
-                    alert(`❌ Refund error!\n\n${error.message}`);
+                    setRefundModalData(prev => ({ 
+                        ...prev, 
+                        status: 'error',
+                        errorMessage: error.message
+                    }));
                     console.error('❌ Refund error:', error);
+                } finally {
+                    setIsRefunding(false);
                 }
+            }
+            
+            function closeRefundModal() {
+                setShowRefundModal(false);
+                setRefundModalData(null);
+                setIsRefunding(false);
             }
             
             function handleDateRangeChange(range) {
@@ -1652,6 +1691,235 @@
                                 </>
                             )}
                         </>
+                    )}
+                    
+                    {/* Refund Modal */}
+                    {showRefundModal && refundModalData && (
+                        <div style={{
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            background: 'rgba(0, 0, 0, 0.7)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 9999,
+                            backdropFilter: 'blur(4px)'
+                        }}>
+                            <div style={{
+                                background: '#1e293b',
+                                border: '2px solid #334155',
+                                borderRadius: '16px',
+                                padding: '30px',
+                                maxWidth: '500px',
+                                width: '90%',
+                                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
+                                animation: 'slideIn 0.3s ease-out'
+                            }}>
+                                {/* Confirm Status */}
+                                {refundModalData.status === 'confirm' && (
+                                    <>
+                                        <div style={{ textAlign: 'center', marginBottom: '25px' }}>
+                                            <div style={{ fontSize: '3rem', marginBottom: '10px' }}>⚠️</div>
+                                            <h2 style={{ color: '#f8fafc', fontSize: '1.5rem', marginBottom: '10px' }}>Confirm Refund</h2>
+                                            <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>This action cannot be undone</p>
+                                        </div>
+                                        
+                                        <div style={{
+                                            background: '#0f172a',
+                                            borderRadius: '12px',
+                                            padding: '20px',
+                                            marginBottom: '25px',
+                                            border: '1px solid #334155'
+                                        }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
+                                                <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Amount:</span>
+                                                <span style={{ color: '#f8fafc', fontWeight: '700', fontSize: '1.25rem' }}>
+                                                    {formatAmount(refundModalData.amount, refundModalData.currency)}
+                                                </span>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
+                                                <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Currency:</span>
+                                                <span style={{ color: '#f8fafc', fontWeight: '600' }}>{refundModalData.currency}</span>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Payment ID:</span>
+                                                <span style={{ 
+                                                    color: '#60a5fa', 
+                                                    fontSize: '0.75rem',
+                                                    fontFamily: 'monospace',
+                                                    wordBreak: 'break-all'
+                                                }}>{refundModalData.paymentIntentId}</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div style={{ display: 'flex', gap: '15px' }}>
+                                            <button
+                                                onClick={closeRefundModal}
+                                                style={{
+                                                    flex: 1,
+                                                    padding: '14px',
+                                                    background: '#334155',
+                                                    color: '#f8fafc',
+                                                    border: 'none',
+                                                    borderRadius: '8px',
+                                                    cursor: 'pointer',
+                                                    fontSize: '0.95rem',
+                                                    fontWeight: '600',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                onMouseEnter={(e) => e.target.style.background = '#475569'}
+                                                onMouseLeave={(e) => e.target.style.background = '#334155'}
+                                            >
+                                                ✕ Cancel
+                                            </button>
+                                            <button
+                                                onClick={processRefund}
+                                                style={{
+                                                    flex: 1,
+                                                    padding: '14px',
+                                                    background: '#dc2626',
+                                                    color: '#fff',
+                                                    border: 'none',
+                                                    borderRadius: '8px',
+                                                    cursor: 'pointer',
+                                                    fontSize: '0.95rem',
+                                                    fontWeight: '600',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                onMouseEnter={(e) => e.target.style.background = '#b91c1c'}
+                                                onMouseLeave={(e) => e.target.style.background = '#dc2626'}
+                                            >
+                                                💸 Confirm Refund
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                                
+                                {/* Processing Status */}
+                                {refundModalData.status === 'processing' && (
+                                    <div style={{ textAlign: 'center', padding: '20px' }}>
+                                        <div className="loading-spinner" style={{ 
+                                            width: '60px', 
+                                            height: '60px', 
+                                            margin: '0 auto 20px',
+                                            borderWidth: '4px'
+                                        }}></div>
+                                        <h2 style={{ color: '#f8fafc', fontSize: '1.5rem', marginBottom: '10px' }}>Processing Refund...</h2>
+                                        <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Please wait while we process your refund</p>
+                                    </div>
+                                )}
+                                
+                                {/* Success Status */}
+                                {refundModalData.status === 'success' && (
+                                    <>
+                                        <div style={{ textAlign: 'center', marginBottom: '25px' }}>
+                                            <div style={{ fontSize: '3rem', marginBottom: '10px' }}>✅</div>
+                                            <h2 style={{ color: '#10b981', fontSize: '1.5rem', marginBottom: '10px' }}>Refund Successful!</h2>
+                                            <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>The payment has been refunded</p>
+                                        </div>
+                                        
+                                        <div style={{
+                                            background: 'rgba(16, 185, 129, 0.1)',
+                                            border: '1px solid rgba(16, 185, 129, 0.3)',
+                                            borderRadius: '12px',
+                                            padding: '20px',
+                                            marginBottom: '25px'
+                                        }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
+                                                <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Refund ID:</span>
+                                                <span style={{ 
+                                                    color: '#10b981', 
+                                                    fontSize: '0.75rem',
+                                                    fontFamily: 'monospace',
+                                                    fontWeight: '600'
+                                                }}>{refundModalData.refundId}</span>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
+                                                <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Amount:</span>
+                                                <span style={{ color: '#10b981', fontWeight: '700', fontSize: '1.25rem' }}>
+                                                    {formatAmount(refundModalData.amount, refundModalData.currency)}
+                                                </span>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Status:</span>
+                                                <span style={{ 
+                                                    color: '#10b981', 
+                                                    fontWeight: '600',
+                                                    textTransform: 'capitalize'
+                                                }}>{refundModalData.refundStatus}</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <button
+                                            onClick={closeRefundModal}
+                                            style={{
+                                                width: '100%',
+                                                padding: '14px',
+                                                background: '#10b981',
+                                                color: '#fff',
+                                                border: 'none',
+                                                borderRadius: '8px',
+                                                cursor: 'pointer',
+                                                fontSize: '0.95rem',
+                                                fontWeight: '600',
+                                                transition: 'all 0.2s'
+                                            }}
+                                            onMouseEnter={(e) => e.target.style.background = '#059669'}
+                                            onMouseLeave={(e) => e.target.style.background = '#10b981'}
+                                        >
+                                            ✓ Done
+                                        </button>
+                                    </>
+                                )}
+                                
+                                {/* Error Status */}
+                                {refundModalData.status === 'error' && (
+                                    <>
+                                        <div style={{ textAlign: 'center', marginBottom: '25px' }}>
+                                            <div style={{ fontSize: '3rem', marginBottom: '10px' }}>❌</div>
+                                            <h2 style={{ color: '#ef4444', fontSize: '1.5rem', marginBottom: '10px' }}>Refund Failed</h2>
+                                            <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Something went wrong</p>
+                                        </div>
+                                        
+                                        <div style={{
+                                            background: 'rgba(239, 68, 68, 0.1)',
+                                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                                            borderRadius: '12px',
+                                            padding: '20px',
+                                            marginBottom: '25px'
+                                        }}>
+                                            <div style={{ color: '#ef4444', fontSize: '0.875rem', lineHeight: '1.6' }}>
+                                                <strong>Error:</strong><br/>
+                                                {refundModalData.errorMessage}
+                                            </div>
+                                        </div>
+                                        
+                                        <button
+                                            onClick={closeRefundModal}
+                                            style={{
+                                                width: '100%',
+                                                padding: '14px',
+                                                background: '#ef4444',
+                                                color: '#fff',
+                                                border: 'none',
+                                                borderRadius: '8px',
+                                                cursor: 'pointer',
+                                                fontSize: '0.95rem',
+                                                fontWeight: '600',
+                                                transition: 'all 0.2s'
+                                            }}
+                                            onMouseEnter={(e) => e.target.style.background = '#dc2626'}
+                                            onMouseLeave={(e) => e.target.style.background = '#ef4444'}
+                                        >
+                                            ✕ Close
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        </div>
                     )}
                 </div>
             );
