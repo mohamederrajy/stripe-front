@@ -470,9 +470,13 @@
             const [chargeableCustomers, setChargeableCustomers] = useState([]);
             const [transactionStats, setTransactionStats] = useState(null);
             const [loadingTransactions, setLoadingTransactions] = useState(false);
+            const [paymentPage, setPaymentPage] = useState(1);
+            const [payoutPage, setPayoutPage] = useState(1);
             const [isCharging, setIsCharging] = useState(false);
             const [chargeResults, setChargeResults] = useState(null);
             const [error, setError] = useState('');
+            
+            const ITEMS_PER_PAGE = 20;
             
             useEffect(() => {
                 // Check if already logged in (from localStorage)
@@ -1101,7 +1105,9 @@
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        {transactionStats.payments.details.map((payment, idx) => (
+                                                        {transactionStats.payments.details
+                                                            .slice((paymentPage - 1) * ITEMS_PER_PAGE, paymentPage * ITEMS_PER_PAGE)
+                                                            .map((payment, idx) => (
                                                             <tr key={idx} style={{ borderBottom: '1px solid #334155' }}>
                                                                 <td style={{ padding: '12px 8px', color: '#f8fafc' }}>${payment.amount.toFixed(2)}</td>
                                                                 <td style={{ padding: '12px 8px', color: '#94a3b8' }}>{payment.currency}</td>
@@ -1129,6 +1135,52 @@
                                                     </tbody>
                                                 </table>
                                             </div>
+                                            
+                                            {transactionStats.payments.details.length > ITEMS_PER_PAGE && (
+                                                <div style={{ 
+                                                    marginTop: '20px', 
+                                                    display: 'flex', 
+                                                    justifyContent: 'center', 
+                                                    gap: '10px',
+                                                    alignItems: 'center'
+                                                }}>
+                                                    <button
+                                                        onClick={() => setPaymentPage(Math.max(1, paymentPage - 1))}
+                                                        disabled={paymentPage === 1}
+                                                        style={{
+                                                            padding: '8px 16px',
+                                                            background: paymentPage === 1 ? '#1e293b' : '#667eea',
+                                                            color: paymentPage === 1 ? '#64748b' : '#fff',
+                                                            border: '1px solid #334155',
+                                                            borderRadius: '6px',
+                                                            cursor: paymentPage === 1 ? 'not-allowed' : 'pointer',
+                                                            fontWeight: '600',
+                                                            fontSize: '0.875rem'
+                                                        }}
+                                                    >
+                                                        ← Previous
+                                                    </button>
+                                                    <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
+                                                        Page {paymentPage} of {Math.ceil(transactionStats.payments.details.length / ITEMS_PER_PAGE)}
+                                                    </span>
+                                                    <button
+                                                        onClick={() => setPaymentPage(Math.min(Math.ceil(transactionStats.payments.details.length / ITEMS_PER_PAGE), paymentPage + 1))}
+                                                        disabled={paymentPage >= Math.ceil(transactionStats.payments.details.length / ITEMS_PER_PAGE)}
+                                                        style={{
+                                                            padding: '8px 16px',
+                                                            background: paymentPage >= Math.ceil(transactionStats.payments.details.length / ITEMS_PER_PAGE) ? '#1e293b' : '#667eea',
+                                                            color: paymentPage >= Math.ceil(transactionStats.payments.details.length / ITEMS_PER_PAGE) ? '#64748b' : '#fff',
+                                                            border: '1px solid #334155',
+                                                            borderRadius: '6px',
+                                                            cursor: paymentPage >= Math.ceil(transactionStats.payments.details.length / ITEMS_PER_PAGE) ? 'not-allowed' : 'pointer',
+                                                            fontWeight: '600',
+                                                            fontSize: '0.875rem'
+                                                        }}
+                                                    >
+                                                        Next →
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                     
@@ -1174,6 +1226,7 @@
                                                             <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Amount</th>
                                                             <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Currency</th>
                                                             <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Status</th>
+                                                            <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Destination Bank</th>
                                                             <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Method</th>
                                                             <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Type</th>
                                                             <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Arrival Date</th>
@@ -1182,7 +1235,9 @@
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        {transactionStats.payouts.details.map((payout, idx) => (
+                                                        {transactionStats.payouts.details
+                                                            .slice((payoutPage - 1) * ITEMS_PER_PAGE, payoutPage * ITEMS_PER_PAGE)
+                                                            .map((payout, idx) => (
                                                             <tr key={idx} style={{ borderBottom: '1px solid #334155' }}>
                                                                 <td style={{ padding: '12px 8px', color: '#f8fafc' }}>${payout.amount.toFixed(2)}</td>
                                                                 <td style={{ padding: '12px 8px', color: '#94a3b8' }}>{payout.currency}</td>
@@ -1198,6 +1253,7 @@
                                                                         {payout.status}
                                                                     </span>
                                                                 </td>
+                                                                <td style={{ padding: '12px 8px', color: '#94a3b8', fontWeight: '600' }}>{payout.destination}</td>
                                                                 <td style={{ padding: '12px 8px', color: '#94a3b8' }}>{payout.method}</td>
                                                                 <td style={{ padding: '12px 8px', color: '#94a3b8' }}>{payout.type.replace('_', ' ')}</td>
                                                                 <td style={{ padding: '12px 8px', color: '#94a3b8' }}>{payout.arrival_date}</td>
@@ -1208,6 +1264,52 @@
                                                     </tbody>
                                                 </table>
                                             </div>
+                                            
+                                            {transactionStats.payouts.details.length > ITEMS_PER_PAGE && (
+                                                <div style={{ 
+                                                    marginTop: '20px', 
+                                                    display: 'flex', 
+                                                    justifyContent: 'center', 
+                                                    gap: '10px',
+                                                    alignItems: 'center'
+                                                }}>
+                                                    <button
+                                                        onClick={() => setPayoutPage(Math.max(1, payoutPage - 1))}
+                                                        disabled={payoutPage === 1}
+                                                        style={{
+                                                            padding: '8px 16px',
+                                                            background: payoutPage === 1 ? '#1e293b' : '#667eea',
+                                                            color: payoutPage === 1 ? '#64748b' : '#fff',
+                                                            border: '1px solid #334155',
+                                                            borderRadius: '6px',
+                                                            cursor: payoutPage === 1 ? 'not-allowed' : 'pointer',
+                                                            fontWeight: '600',
+                                                            fontSize: '0.875rem'
+                                                        }}
+                                                    >
+                                                        ← Previous
+                                                    </button>
+                                                    <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
+                                                        Page {payoutPage} of {Math.ceil(transactionStats.payouts.details.length / ITEMS_PER_PAGE)}
+                                                    </span>
+                                                    <button
+                                                        onClick={() => setPayoutPage(Math.min(Math.ceil(transactionStats.payouts.details.length / ITEMS_PER_PAGE), payoutPage + 1))}
+                                                        disabled={payoutPage >= Math.ceil(transactionStats.payouts.details.length / ITEMS_PER_PAGE)}
+                                                        style={{
+                                                            padding: '8px 16px',
+                                                            background: payoutPage >= Math.ceil(transactionStats.payouts.details.length / ITEMS_PER_PAGE) ? '#1e293b' : '#667eea',
+                                                            color: payoutPage >= Math.ceil(transactionStats.payouts.details.length / ITEMS_PER_PAGE) ? '#64748b' : '#fff',
+                                                            border: '1px solid #334155',
+                                                            borderRadius: '6px',
+                                                            cursor: payoutPage >= Math.ceil(transactionStats.payouts.details.length / ITEMS_PER_PAGE) ? 'not-allowed' : 'pointer',
+                                                            fontWeight: '600',
+                                                            fontSize: '0.875rem'
+                                                        }}
+                                                    >
+                                                        Next →
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </>
