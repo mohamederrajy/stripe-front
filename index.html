@@ -490,6 +490,7 @@
             const [showRefundModal, setShowRefundModal] = useState(false);
             const [refundModalData, setRefundModalData] = useState(null);
             const [isRefunding, setIsRefunding] = useState(false);
+            const [refundedPayments, setRefundedPayments] = useState(new Set());
             
             // Currency helper function
             const getCurrencySymbol = (currency) => {
@@ -722,6 +723,7 @@
             }
             
             function handleRefund(paymentIntentId, amount, currency) {
+                console.log('💸 Opening refund modal for:', paymentIntentId);
                 // Show confirmation modal
                 setRefundModalData({
                     paymentIntentId,
@@ -730,6 +732,7 @@
                     status: 'confirm' // confirm, processing, success, error
                 });
                 setShowRefundModal(true);
+                console.log('Modal state set:', { showRefundModal: true, paymentIntentId, amount, currency });
             }
             
             async function processRefund() {
@@ -758,6 +761,9 @@
                             refundId: data.refund.id,
                             refundStatus: data.refund.status
                         }));
+                        
+                        // Mark payment as refunded
+                        setRefundedPayments(prev => new Set(prev).add(refundModalData.paymentIntentId));
                         
                         // Reload transaction stats to reflect the refund
                         setTimeout(() => {
@@ -1466,16 +1472,29 @@
                                                                 <td style={{ padding: '12px 8px', color: '#f8fafc' }}>${payment.amount.toFixed(2)}</td>
                                                                 <td style={{ padding: '12px 8px', color: '#94a3b8' }}>{payment.currency}</td>
                                                                 <td style={{ padding: '12px 8px' }}>
-                                                                    <span style={{
-                                                                        padding: '4px 8px',
-                                                                        borderRadius: '4px',
-                                                                        fontSize: '0.75rem',
-                                                                        fontWeight: '600',
-                                                                        background: payment.status === 'succeeded' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                                                                        color: payment.status === 'succeeded' ? '#10b981' : '#ef4444'
-                                                                    }}>
-                                                                        {payment.status}
-                                                                    </span>
+                                                                    {refundedPayments.has(payment.id) ? (
+                                                                        <span style={{
+                                                                            padding: '4px 8px',
+                                                                            borderRadius: '4px',
+                                                                            fontSize: '0.75rem',
+                                                                            fontWeight: '600',
+                                                                            background: 'rgba(251, 146, 60, 0.2)',
+                                                                            color: '#fb923c'
+                                                                        }}>
+                                                                            Refund pending
+                                                                        </span>
+                                                                    ) : (
+                                                                        <span style={{
+                                                                            padding: '4px 8px',
+                                                                            borderRadius: '4px',
+                                                                            fontSize: '0.75rem',
+                                                                            fontWeight: '600',
+                                                                            background: payment.status === 'succeeded' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                                                                            color: payment.status === 'succeeded' ? '#10b981' : '#ef4444'
+                                                                        }}>
+                                                                            {payment.status}
+                                                                        </span>
+                                                                    )}
                                                                 </td>
                                                                 <td style={{ padding: '12px 8px', color: '#94a3b8' }}>{payment.payment_method}</td>
                                                                 <td style={{ padding: '12px 8px', color: '#94a3b8' }}>{payment.description}</td>
@@ -1485,7 +1504,7 @@
                                                                     {payment.decline_reason}
                                                                 </td>
                                                                 <td style={{ padding: '12px 8px', textAlign: 'center' }}>
-                                                                    {payment.status === 'succeeded' && (
+                                                                    {payment.status === 'succeeded' && !refundedPayments.has(payment.id) && (
                                                                         <button
                                                                             onClick={() => handleRefund(payment.id, payment.amount, payment.currency)}
                                                                             style={{
@@ -1504,6 +1523,15 @@
                                                                         >
                                                                             💸 Refund
                                                                         </button>
+                                                                    )}
+                                                                    {refundedPayments.has(payment.id) && (
+                                                                        <span style={{ 
+                                                                            color: '#fb923c', 
+                                                                            fontSize: '0.75rem',
+                                                                            fontWeight: '600'
+                                                                        }}>
+                                                                            ⏳ Refunding...
+                                                                        </span>
                                                                     )}
                                                                 </td>
                                                             </tr>
@@ -1694,8 +1722,11 @@
                     )}
                     
                     {/* Refund Modal */}
+                    {console.log('Refund Modal Check:', { showRefundModal, refundModalData })}
                     {showRefundModal && refundModalData && (
-                        <div style={{
+                        <div onClick={(e) => {
+                            if (e.target === e.currentTarget) closeRefundModal();
+                        }} style={{
                             position: 'fixed',
                             top: 0,
                             left: 0,
