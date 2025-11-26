@@ -469,6 +469,7 @@
             const [customerStats, setCustomerStats] = useState(null);
             const [chargeableCustomers, setChargeableCustomers] = useState([]);
             const [transactionStats, setTransactionStats] = useState(null);
+            const [loadingTransactions, setLoadingTransactions] = useState(false);
             const [isCharging, setIsCharging] = useState(false);
             const [chargeResults, setChargeResults] = useState(null);
             const [error, setError] = useState('');
@@ -582,6 +583,7 @@
                     // STAGE 3: Load transaction stats IN BACKGROUND (non-blocking, runs after everything else)
                     setTimeout(async () => {
                         try {
+                            setLoadingTransactions(true);
                             console.log('🔄 Loading transaction stats in background...');
                             const transResponse = await fetch(`${API_URL}/get-transactions`, {
                                 method: 'POST',
@@ -598,15 +600,23 @@
                                 console.log(`✅ Loaded transaction stats: ${transData.payments.all} payments, ${transData.payouts.total} payouts`);
                             } else {
                                 console.error('❌ Transaction stats failed:', transData.error);
+                                // Set empty stats on error
+                                setTransactionStats({
+                                    success: true,
+                                    payments: { all: 0, succeeded: 0, refunded: 0, disputed: 0, failed: 0, details: [] },
+                                    payouts: { total: 0, paid: 0, pending: 0, failed: 0, amount: 0 }
+                                });
                             }
                         } catch (transError) {
                             console.error('❌ Error loading transaction stats:', transError);
-                            // Set empty stats so cards still show
+                            // Set empty stats so cards still show even on error
                             setTransactionStats({
                                 success: true,
                                 payments: { all: 0, succeeded: 0, refunded: 0, disputed: 0, failed: 0, details: [] },
                                 payouts: { total: 0, paid: 0, pending: 0, failed: 0, amount: 0 }
                             });
+                        } finally {
+                            setLoadingTransactions(false);
                         }
                     }, 100); // Load in background after 100ms
                 } catch (error) {
@@ -1026,6 +1036,22 @@
                                     )}
                                 </div>
                             </div>
+                            
+                            {loadingTransactions && !transactionStats && (
+                                <div className="card">
+                                    <div className="card-title">📊 Loading Transaction History...</div>
+                                    <div style={{ 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        justifyContent: 'center',
+                                        padding: '40px',
+                                        gap: '15px'
+                                    }}>
+                                        <div className="loading-spinner"></div>
+                                        <span style={{ color: '#94a3b8' }}>Loading payments and payouts data...</span>
+                                    </div>
+                                </div>
+                            )}
                             
                             {transactionStats && (
                                 <>
