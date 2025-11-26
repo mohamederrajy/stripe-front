@@ -739,6 +739,15 @@
                 setIsRefunding(true);
                 setRefundModalData(prev => ({ ...prev, status: 'processing' }));
                 
+                // Immediately mark as refunding (optimistic update)
+                console.log('📝 Adding to refundedPayments:', refundModalData.paymentIntentId);
+                setRefundedPayments(prev => {
+                    const newSet = new Set(prev);
+                    newSet.add(refundModalData.paymentIntentId);
+                    console.log('📝 Updated refundedPayments:', Array.from(newSet));
+                    return newSet;
+                });
+                
                 try {
                     console.log(`💸 Refunding payment: ${refundModalData.paymentIntentId}`);
                     
@@ -762,16 +771,22 @@
                             refundStatus: data.refund.status
                         }));
                         
-                        // Mark payment as refunded
-                        setRefundedPayments(prev => new Set(prev).add(refundModalData.paymentIntentId));
+                        // Already marked as refunding above (optimistic update)
+                        console.log('✅ Refund completed:', data.refund);
+                        console.log('📋 Current refundedPayments:', Array.from(refundedPayments));
                         
                         // Reload transaction stats to reflect the refund
                         setTimeout(() => {
                             getTransactionStats();
-                        }, 1000);
-                        
-                        console.log('✅ Refund completed:', data.refund);
+                        }, 1500);
                     } else {
+                        // Remove from refunded set if it failed
+                        setRefundedPayments(prev => {
+                            const newSet = new Set(prev);
+                            newSet.delete(refundModalData.paymentIntentId);
+                            return newSet;
+                        });
+                        
                         setRefundModalData(prev => ({ 
                             ...prev, 
                             status: 'error',
@@ -780,6 +795,13 @@
                         console.error('❌ Refund failed:', data.error);
                     }
                 } catch (error) {
+                    // Remove from refunded set if there was an error
+                    setRefundedPayments(prev => {
+                        const newSet = new Set(prev);
+                        newSet.delete(refundModalData.paymentIntentId);
+                        return newSet;
+                    });
+                    
                     setRefundModalData(prev => ({ 
                         ...prev, 
                         status: 'error',
@@ -1467,12 +1489,17 @@
                                                     <tbody>
                                                         {transactionStats.payments.details
                                                             .slice((paymentPage - 1) * ITEMS_PER_PAGE, paymentPage * ITEMS_PER_PAGE)
-                                                            .map((payment, idx) => (
+                                                            .map((payment, idx) => {
+                                                                const isRefunding = refundedPayments.has(payment.id);
+                                                                if (idx === 0) {
+                                                                    console.log('🔍 Checking payment:', payment.id, 'isRefunding:', isRefunding, 'refundedPayments size:', refundedPayments.size);
+                                                                }
+                                                                return (
                                                             <tr key={idx} style={{ borderBottom: '1px solid #334155' }}>
                                                                 <td style={{ padding: '12px 8px', color: '#f8fafc' }}>${payment.amount.toFixed(2)}</td>
                                                                 <td style={{ padding: '12px 8px', color: '#94a3b8' }}>{payment.currency}</td>
                                                                 <td style={{ padding: '12px 8px' }}>
-                                                                    {refundedPayments.has(payment.id) ? (
+                                                                    {isRefunding ? (
                                                                         <span style={{
                                                                             padding: '4px 8px',
                                                                             borderRadius: '4px',
@@ -1504,7 +1531,7 @@
                                                                     {payment.decline_reason}
                                                                 </td>
                                                                 <td style={{ padding: '12px 8px', textAlign: 'center' }}>
-                                                                    {payment.status === 'succeeded' && !refundedPayments.has(payment.id) && (
+                                                                    {payment.status === 'succeeded' && !isRefunding && (
                                                                         <button
                                                                             onClick={() => handleRefund(payment.id, payment.amount, payment.currency)}
                                                                             style={{
@@ -1524,7 +1551,7 @@
                                                                             💸 Refund
                                                                         </button>
                                                                     )}
-                                                                    {refundedPayments.has(payment.id) && (
+                                                                    {isRefunding && (
                                                                         <span style={{ 
                                                                             color: '#fb923c', 
                                                                             fontSize: '0.75rem',
@@ -1535,7 +1562,8 @@
                                                                     )}
                                                                 </td>
                                                             </tr>
-                                                        ))}
+                                                            );
+                                                        })}
                                                     </tbody>
                                                 </table>
                                             </div>
