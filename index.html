@@ -643,11 +643,13 @@
                         body: JSON.stringify({ apiKey, dateRange })
                     });
                     
+                    console.log('Overview response status:', response.status);
                     const data = await response.json();
+                    console.log('Overview data received:', data);
                     
                     if (data.success) {
                         setOverviewData(data);
-                        console.log(`✅ Overview loaded successfully`);
+                        console.log(`✅ Overview loaded: Balance=$${data.balance.available}, Next Payout=$${data.next_payout.amount}, Graphs=${data.graphs.gross_volume.length} points`);
                     } else {
                         console.error('❌ Overview failed:', data.error);
                     }
