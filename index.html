@@ -490,7 +490,8 @@
             const [showRefundModal, setShowRefundModal] = useState(false);
             const [refundModalData, setRefundModalData] = useState(null);
             const [isRefunding, setIsRefunding] = useState(false);
-            const [refundedPayments, setRefundedPayments] = useState(new Set());
+            const [refundedPayments, setRefundedPayments] = useState([]);
+            const [renderTrigger, setRenderTrigger] = useState(0);
             
             // Currency helper function
             const getCurrencySymbol = (currency) => {
@@ -742,10 +743,13 @@
                 // Immediately mark as refunding (optimistic update)
                 console.log('📝 Adding to refundedPayments:', refundModalData.paymentIntentId);
                 setRefundedPayments(prev => {
-                    const newSet = new Set(prev);
-                    newSet.add(refundModalData.paymentIntentId);
-                    console.log('📝 Updated refundedPayments:', Array.from(newSet));
-                    return newSet;
+                    if (!prev.includes(refundModalData.paymentIntentId)) {
+                        const newArray = [...prev, refundModalData.paymentIntentId];
+                        console.log('📝 Updated refundedPayments:', newArray);
+                        setRenderTrigger(t => t + 1); // Force re-render
+                        return newArray;
+                    }
+                    return prev;
                 });
                 
                 try {
@@ -780,12 +784,10 @@
                             getTransactionStats();
                         }, 1500);
                     } else {
-                        // Remove from refunded set if it failed
-                        setRefundedPayments(prev => {
-                            const newSet = new Set(prev);
-                            newSet.delete(refundModalData.paymentIntentId);
-                            return newSet;
-                        });
+                        // Remove from refunded array if it failed
+                        setRefundedPayments(prev => 
+                            prev.filter(id => id !== refundModalData.paymentIntentId)
+                        );
                         
                         setRefundModalData(prev => ({ 
                             ...prev, 
@@ -795,12 +797,10 @@
                         console.error('❌ Refund failed:', data.error);
                     }
                 } catch (error) {
-                    // Remove from refunded set if there was an error
-                    setRefundedPayments(prev => {
-                        const newSet = new Set(prev);
-                        newSet.delete(refundModalData.paymentIntentId);
-                        return newSet;
-                    });
+                    // Remove from refunded array if there was an error
+                    setRefundedPayments(prev => 
+                        prev.filter(id => id !== refundModalData.paymentIntentId)
+                    );
                     
                     setRefundModalData(prev => ({ 
                         ...prev, 
@@ -1491,10 +1491,10 @@
                                                             const payments = transactionStats.payments.details.slice((paymentPage - 1) * ITEMS_PER_PAGE, paymentPage * ITEMS_PER_PAGE);
                                                             console.log('💳 Rendering payments page:', paymentPage);
                                                             console.log('💳 Total payments on page:', payments.length);
-                                                            console.log('💳 Refunded payments Set:', Array.from(refundedPayments));
+                                                            console.log('💳 Refunded payments Array:', refundedPayments);
                                                             console.log('💳 Payment IDs on page:', payments.map(p => p.id));
                                                             return payments.map((payment, idx) => {
-                                                                const isRefunding = refundedPayments.has(payment.id);
+                                                                const isRefunding = refundedPayments.includes(payment.id);
                                                                 console.log(`💳 Payment ${idx}: ID="${payment.id}" status="${payment.status}" isRefunding=${isRefunding}`);
                                                                 return (
                                                             <tr key={idx} style={{ borderBottom: '1px solid #334155' }}>
