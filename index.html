@@ -707,6 +707,51 @@
                 }
             }
             
+            async function handleRefund(paymentIntentId, amount, currency) {
+                // Confirmation dialog
+                const confirmRefund = confirm(
+                    `Are you sure you want to refund this payment?\n\n` +
+                    `Amount: ${getCurrencySymbol(currency)}${amount.toFixed(2)} ${currency}\n` +
+                    `Payment ID: ${paymentIntentId}\n\n` +
+                    `This action cannot be undone!`
+                );
+                
+                if (!confirmRefund) {
+                    return;
+                }
+                
+                try {
+                    console.log(`💸 Refunding payment: ${paymentIntentId}`);
+                    
+                    const response = await fetch(`${API_URL}/refund`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            apiKey, 
+                            paymentIntentId,
+                            reason: 'requested_by_customer'
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        alert(`✅ Refund successful!\n\nRefund ID: ${data.refund.id}\nAmount: ${getCurrencySymbol(data.refund.currency)}${data.refund.amount.toFixed(2)} ${data.refund.currency}\nStatus: ${data.refund.status}`);
+                        
+                        // Reload transaction stats to reflect the refund
+                        await getTransactionStats();
+                        
+                        console.log('✅ Refund completed:', data.refund);
+                    } else {
+                        alert(`❌ Refund failed!\n\n${data.error}`);
+                        console.error('❌ Refund failed:', data.error);
+                    }
+                } catch (error) {
+                    alert(`❌ Refund error!\n\n${error.message}`);
+                    console.error('❌ Refund error:', error);
+                }
+            }
+            
             function handleDateRangeChange(range) {
                 setSelectedDateRange(range);
                 getOverviewData(range);
@@ -1371,6 +1416,7 @@
                                                             <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Customer ID</th>
                                                             <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Date</th>
                                                             <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Decline Reason</th>
+                                                            <th style={{ padding: '12px 8px', textAlign: 'center', color: '#cbd5e1', fontWeight: '600' }}>Actions</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -1398,6 +1444,28 @@
                                                                 <td style={{ padding: '12px 8px', color: '#94a3b8', fontSize: '0.75rem' }}>{payment.date}</td>
                                                                 <td style={{ padding: '12px 8px', color: payment.decline_reason !== 'N/A' ? '#ef4444' : '#64748b', fontSize: '0.75rem' }}>
                                                                     {payment.decline_reason}
+                                                                </td>
+                                                                <td style={{ padding: '12px 8px', textAlign: 'center' }}>
+                                                                    {payment.status === 'succeeded' && (
+                                                                        <button
+                                                                            onClick={() => handleRefund(payment.id, payment.amount, payment.currency)}
+                                                                            style={{
+                                                                                padding: '6px 12px',
+                                                                                background: '#dc2626',
+                                                                                color: '#fff',
+                                                                                border: 'none',
+                                                                                borderRadius: '6px',
+                                                                                cursor: 'pointer',
+                                                                                fontSize: '0.75rem',
+                                                                                fontWeight: '600',
+                                                                                transition: 'all 0.2s'
+                                                                            }}
+                                                                            onMouseEnter={(e) => e.target.style.background = '#b91c1c'}
+                                                                            onMouseLeave={(e) => e.target.style.background = '#dc2626'}
+                                                                        >
+                                                                            💸 Refund
+                                                                        </button>
+                                                                    )}
                                                                 </td>
                                                             </tr>
                                                         ))}
