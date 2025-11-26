@@ -468,6 +468,7 @@
             
             const [customerStats, setCustomerStats] = useState(null);
             const [chargeableCustomers, setChargeableCustomers] = useState([]);
+            const [transactionStats, setTransactionStats] = useState(null);
             const [isCharging, setIsCharging] = useState(false);
             const [chargeResults, setChargeResults] = useState(null);
             const [error, setError] = useState('');
@@ -576,6 +577,19 @@
                         // Store chargeable customers for later use (no need to check again!)
                         setChargeableCustomers(data.customers || []);
                         console.log(`✅ Stored ${data.customers?.length || 0} chargeable customers for instant charging!`);
+                    }
+                    
+                    // STAGE 3: Load transaction stats (in parallel)
+                    const transResponse = await fetch(`${API_URL}/get-transactions`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ apiKey })
+                    });
+                    
+                    const transData = await transResponse.json();
+                    if (transData.success) {
+                        setTransactionStats(transData);
+                        console.log(`✅ Loaded transaction stats: ${transData.payments.all} payments, ${transData.payouts.total} payouts`);
                     }
                 } catch (error) {
                     console.error(error);
@@ -783,6 +797,64 @@
                                         </>
                                     )}
                                 </div>
+                            )}
+                            
+                            {transactionStats && (
+                                <>
+                                    <div className="card">
+                                        <div className="card-title">💳 Payments Overview</div>
+                                        <div className="stats-grid" style={{ marginBottom: '0' }}>
+                                            <div className="stat-card blue">
+                                                <div className="stat-label">All</div>
+                                                <div className="stat-value">{transactionStats.payments.all}</div>
+                                            </div>
+                                            <div className="stat-card green">
+                                                <div className="stat-label">Succeeded</div>
+                                                <div className="stat-value">{transactionStats.payments.succeeded}</div>
+                                            </div>
+                                            <div className="stat-card orange">
+                                                <div className="stat-label">Refunded</div>
+                                                <div className="stat-value">{transactionStats.payments.refunded}</div>
+                                            </div>
+                                            <div className="stat-card red">
+                                                <div className="stat-label">Disputed</div>
+                                                <div className="stat-value">{transactionStats.payments.disputed}</div>
+                                            </div>
+                                            <div className="stat-card red">
+                                                <div className="stat-label">Failed</div>
+                                                <div className="stat-value">{transactionStats.payments.failed}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="card">
+                                        <div className="card-title">💰 Payouts Overview</div>
+                                        <div className="stats-grid" style={{ marginBottom: '0' }}>
+                                            <div className="stat-card blue">
+                                                <div className="stat-label">Total</div>
+                                                <div className="stat-value">{transactionStats.payouts.total}</div>
+                                            </div>
+                                            <div className="stat-card green">
+                                                <div className="stat-label">Paid</div>
+                                                <div className="stat-value">{transactionStats.payouts.paid}</div>
+                                            </div>
+                                            <div className="stat-card orange">
+                                                <div className="stat-label">Pending</div>
+                                                <div className="stat-value">{transactionStats.payouts.pending}</div>
+                                            </div>
+                                            <div className="stat-card red">
+                                                <div className="stat-label">Failed</div>
+                                                <div className="stat-value">{transactionStats.payouts.failed}</div>
+                                            </div>
+                                            <div className="stat-card blue">
+                                                <div className="stat-label">Amount</div>
+                                                <div className="stat-value" style={{ fontSize: '1.5rem' }}>
+                                                    ${transactionStats.payouts.amount.toLocaleString()}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </>
                             )}
                             
                             <div className="layout">
