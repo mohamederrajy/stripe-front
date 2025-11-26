@@ -866,156 +866,6 @@
                                 </div>
                             )}
                             
-                            {overviewData && (
-                                <div className="card" style={{ marginBottom: '20px' }}>
-                                    <div className="card-title">📊 Your Overview</div>
-                                    
-                                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '20px' }}>
-                                        {[
-                                            { label: 'Today', value: 'today' },
-                                            { label: 'Last 7 Days', value: '7days' },
-                                            { label: 'Last 4 Weeks', value: '4weeks' },
-                                            { label: 'Last 6 Months', value: '6months' },
-                                            { label: 'Last 12 Months', value: '12months' },
-                                            { label: 'All Time', value: 'all_time' }
-                                        ].map((range) => (
-                                            <button
-                                                key={range.value}
-                                                onClick={() => handleDateRangeChange(range.value)}
-                                                style={{
-                                                    padding: '8px 16px',
-                                                    background: selectedDateRange === range.value ? '#667eea' : '#1e293b',
-                                                    color: selectedDateRange === range.value ? '#fff' : '#94a3b8',
-                                                    border: `1px solid ${selectedDateRange === range.value ? '#667eea' : '#334155'}`,
-                                                    borderRadius: '6px',
-                                                    cursor: 'pointer',
-                                                    fontWeight: '600',
-                                                    fontSize: '0.875rem',
-                                                    transition: 'all 0.2s'
-                                                }}
-                                            >
-                                                {range.label}
-                                            </button>
-                                        ))}
-                                    </div>
-                                    
-                                    <div className="stats-grid" style={{ marginBottom: '20px' }}>
-                                        <div className="stat-card green">
-                                            <div className="stat-label">Succeeded</div>
-                                            <div className="stat-value" style={{ fontSize: '1.5rem' }}>${overviewData.payments.succeeded.toLocaleString()}</div>
-                                        </div>
-                                        <div className="stat-card orange">
-                                            <div className="stat-label">Uncaptured</div>
-                                            <div className="stat-value" style={{ fontSize: '1.5rem' }}>${overviewData.payments.uncaptured.toLocaleString()}</div>
-                                        </div>
-                                        <div className="stat-card orange">
-                                            <div className="stat-label">Refunded</div>
-                                            <div className="stat-value" style={{ fontSize: '1.5rem' }}>${overviewData.payments.refunded.toLocaleString()}</div>
-                                        </div>
-                                        <div className="stat-card red">
-                                            <div className="stat-label">Blocked</div>
-                                            <div className="stat-value" style={{ fontSize: '1.5rem' }}>${overviewData.payments.blocked.toLocaleString()}</div>
-                                        </div>
-                                        <div className="stat-card red">
-                                            <div className="stat-label">Failed</div>
-                                            <div className="stat-value" style={{ fontSize: '1.5rem' }}>${overviewData.payments.failed.toLocaleString()}</div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '15px', marginBottom: '20px' }}>
-                                        <div style={{ background: '#1e293b', padding: '15px', borderRadius: '8px', border: '1px solid #334155' }}>
-                                            <div style={{ color: '#cbd5e1', fontSize: '0.875rem', fontWeight: '600', marginBottom: '10px' }}>💰 Balance</div>
-                                            <div style={{ color: '#f8fafc', fontSize: '1.5rem', fontWeight: '800' }}>${overviewData.balance.available.toLocaleString()}</div>
-                                            <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginTop: '5px' }}>
-                                                Pending: ${overviewData.balance.pending.toLocaleString()}
-                                            </div>
-                                        </div>
-                                        
-                                        <div style={{ background: '#1e293b', padding: '15px', borderRadius: '8px', border: '1px solid #334155' }}>
-                                            <div style={{ color: '#cbd5e1', fontSize: '0.875rem', fontWeight: '600', marginBottom: '10px' }}>📅 Next Payout</div>
-                                            <div style={{ color: '#f8fafc', fontSize: '1.5rem', fontWeight: '800' }}>${overviewData.next_payout.amount.toLocaleString()}</div>
-                                            <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginTop: '5px' }}>
-                                                {overviewData.next_payout.date}
-                                            </div>
-                                        </div>
-                                        
-                                        <div style={{ background: '#1e293b', padding: '15px', borderRadius: '8px', border: '1px solid #334155' }}>
-                                            <div style={{ color: '#cbd5e1', fontSize: '0.875rem', fontWeight: '600', marginBottom: '10px' }}>⚠️ Dispute Rate</div>
-                                            <div style={{ color: overviewData.graphs.dispute_rate > 1 ? '#ef4444' : '#10b981', fontSize: '1.5rem', fontWeight: '800' }}>
-                                                {overviewData.graphs.dispute_rate}%
-                                            </div>
-                                            <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginTop: '5px' }}>
-                                                {overviewData.graphs.dispute_rate > 1 ? 'Above threshold' : 'Healthy'}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    {overviewData.graphs.gross_volume.length > 0 && (
-                                        <div style={{ marginTop: '20px' }}>
-                                            <div style={{ color: '#cbd5e1', fontSize: '0.875rem', fontWeight: '600', marginBottom: '10px' }}>📈 Gross Volume</div>
-                                            <div style={{ background: '#1e293b', padding: '15px', borderRadius: '8px', border: '1px solid #334155', overflowX: 'auto' }}>
-                                                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', minWidth: '600px', height: '150px' }}>
-                                                    {overviewData.graphs.gross_volume.slice(-30).map((item, idx) => {
-                                                        const maxAmount = Math.max(...overviewData.graphs.gross_volume.map(d => d.amount));
-                                                        const height = (item.amount / maxAmount) * 100;
-                                                        return (
-                                                            <div key={idx} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                                                <div
-                                                                    style={{
-                                                                        width: '100%',
-                                                                        height: `${height}%`,
-                                                                        background: 'linear-gradient(to top, #667eea, #764ba2)',
-                                                                        borderRadius: '4px 4px 0 0',
-                                                                        transition: 'all 0.3s',
-                                                                        cursor: 'pointer'
-                                                                    }}
-                                                                    title={`${item.date}: $${item.amount.toFixed(2)}`}
-                                                                />
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                                <div style={{ color: '#64748b', fontSize: '0.75rem', marginTop: '10px', textAlign: 'center' }}>
-                                                    Last {overviewData.graphs.gross_volume.slice(-30).length} days
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                    
-                                    {overviewData.graphs.net_volume.length > 0 && (
-                                        <div style={{ marginTop: '20px' }}>
-                                            <div style={{ color: '#cbd5e1', fontSize: '0.875rem', fontWeight: '600', marginBottom: '10px' }}>📊 Net Volume</div>
-                                            <div style={{ background: '#1e293b', padding: '15px', borderRadius: '8px', border: '1px solid #334155', overflowX: 'auto' }}>
-                                                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', minWidth: '600px', height: '150px' }}>
-                                                    {overviewData.graphs.net_volume.slice(-30).map((item, idx) => {
-                                                        const maxAmount = Math.max(...overviewData.graphs.net_volume.map(d => d.amount));
-                                                        const height = (item.amount / maxAmount) * 100;
-                                                        return (
-                                                            <div key={idx} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                                                <div
-                                                                    style={{
-                                                                        width: '100%',
-                                                                        height: `${height}%`,
-                                                                        background: 'linear-gradient(to top, #10b981, #34d399)',
-                                                                        borderRadius: '4px 4px 0 0',
-                                                                        transition: 'all 0.3s',
-                                                                        cursor: 'pointer'
-                                                                    }}
-                                                                    title={`${item.date}: $${item.amount.toFixed(2)}`}
-                                                                />
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                                <div style={{ color: '#64748b', fontSize: '0.75rem', marginTop: '10px', textAlign: 'center' }}>
-                                                    Last {overviewData.graphs.net_volume.slice(-30).length} days
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                            
                             <div className="layout">
                                 <div className="card">
                                     <div className="card-title">⚙️ Configuration</div>
@@ -1223,6 +1073,175 @@
                                     )}
                                 </div>
                             </div>
+                            
+                            {(keyValidated || overviewData || loadingOverview) && (
+                                <div className="card" style={{ marginBottom: '20px' }}>
+                                    <div className="card-title">📊 Your Overview</div>
+                                    
+                                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '20px' }}>
+                                        {[
+                                            { label: 'Today', value: 'today' },
+                                            { label: 'Last 7 Days', value: '7days' },
+                                            { label: 'Last 4 Weeks', value: '4weeks' },
+                                            { label: 'Last 6 Months', value: '6months' },
+                                            { label: 'Last 12 Months', value: '12months' },
+                                            { label: 'All Time', value: 'all_time' }
+                                        ].map((range) => (
+                                            <button
+                                                key={range.value}
+                                                onClick={() => handleDateRangeChange(range.value)}
+                                                disabled={loadingOverview}
+                                                style={{
+                                                    padding: '8px 16px',
+                                                    background: selectedDateRange === range.value ? '#667eea' : '#1e293b',
+                                                    color: selectedDateRange === range.value ? '#fff' : '#94a3b8',
+                                                    border: `1px solid ${selectedDateRange === range.value ? '#667eea' : '#334155'}`,
+                                                    borderRadius: '6px',
+                                                    cursor: loadingOverview ? 'not-allowed' : 'pointer',
+                                                    fontWeight: '600',
+                                                    fontSize: '0.875rem',
+                                                    transition: 'all 0.2s',
+                                                    opacity: loadingOverview ? 0.5 : 1
+                                                }}
+                                            >
+                                                {range.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    
+                                    {loadingOverview && !overviewData && (
+                                        <div style={{ 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            justifyContent: 'center',
+                                            padding: '40px',
+                                            gap: '15px'
+                                        }}>
+                                            <div className="loading-spinner"></div>
+                                            <span style={{ color: '#94a3b8' }}>Loading overview data...</span>
+                                        </div>
+                                    )}
+                                    
+                                    {overviewData && (
+                                        <>
+                                            <div className="stats-grid" style={{ marginBottom: '20px' }}>
+                                                <div className="stat-card green">
+                                                    <div className="stat-label">Succeeded</div>
+                                                    <div className="stat-value" style={{ fontSize: '1.5rem' }}>${overviewData.payments.succeeded.toLocaleString()}</div>
+                                                </div>
+                                                <div className="stat-card orange">
+                                                    <div className="stat-label">Uncaptured</div>
+                                                    <div className="stat-value" style={{ fontSize: '1.5rem' }}>${overviewData.payments.uncaptured.toLocaleString()}</div>
+                                                </div>
+                                                <div className="stat-card orange">
+                                                    <div className="stat-label">Refunded</div>
+                                                    <div className="stat-value" style={{ fontSize: '1.5rem' }}>${overviewData.payments.refunded.toLocaleString()}</div>
+                                                </div>
+                                                <div className="stat-card red">
+                                                    <div className="stat-label">Blocked</div>
+                                                    <div className="stat-value" style={{ fontSize: '1.5rem' }}>${overviewData.payments.blocked.toLocaleString()}</div>
+                                                </div>
+                                                <div className="stat-card red">
+                                                    <div className="stat-label">Failed</div>
+                                                    <div className="stat-value" style={{ fontSize: '1.5rem' }}>${overviewData.payments.failed.toLocaleString()}</div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '15px', marginBottom: '20px' }}>
+                                                <div style={{ background: '#1e293b', padding: '15px', borderRadius: '8px', border: '1px solid #334155' }}>
+                                                    <div style={{ color: '#cbd5e1', fontSize: '0.875rem', fontWeight: '600', marginBottom: '10px' }}>💰 Balance</div>
+                                                    <div style={{ color: '#f8fafc', fontSize: '1.5rem', fontWeight: '800' }}>${overviewData.balance.available.toLocaleString()}</div>
+                                                    <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginTop: '5px' }}>
+                                                        Pending: ${overviewData.balance.pending.toLocaleString()}
+                                                    </div>
+                                                </div>
+                                                
+                                                <div style={{ background: '#1e293b', padding: '15px', borderRadius: '8px', border: '1px solid #334155' }}>
+                                                    <div style={{ color: '#cbd5e1', fontSize: '0.875rem', fontWeight: '600', marginBottom: '10px' }}>📅 Next Payout</div>
+                                                    <div style={{ color: '#f8fafc', fontSize: '1.5rem', fontWeight: '800' }}>${overviewData.next_payout.amount.toLocaleString()}</div>
+                                                    <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginTop: '5px' }}>
+                                                        {overviewData.next_payout.date}
+                                                    </div>
+                                                </div>
+                                                
+                                                <div style={{ background: '#1e293b', padding: '15px', borderRadius: '8px', border: '1px solid #334155' }}>
+                                                    <div style={{ color: '#cbd5e1', fontSize: '0.875rem', fontWeight: '600', marginBottom: '10px' }}>⚠️ Dispute Rate</div>
+                                                    <div style={{ color: overviewData.graphs.dispute_rate > 1 ? '#ef4444' : '#10b981', fontSize: '1.5rem', fontWeight: '800' }}>
+                                                        {overviewData.graphs.dispute_rate}%
+                                                    </div>
+                                                    <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginTop: '5px' }}>
+                                                        {overviewData.graphs.dispute_rate > 1 ? 'Above threshold' : 'Healthy'}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            {overviewData.graphs.gross_volume && overviewData.graphs.gross_volume.length > 0 && (
+                                                <div style={{ marginTop: '20px' }}>
+                                                    <div style={{ color: '#cbd5e1', fontSize: '0.875rem', fontWeight: '600', marginBottom: '10px' }}>📈 Gross Volume</div>
+                                                    <div style={{ background: '#1e293b', padding: '15px', borderRadius: '8px', border: '1px solid #334155', overflowX: 'auto' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', minWidth: '600px', height: '150px' }}>
+                                                            {overviewData.graphs.gross_volume.slice(-30).map((item, idx) => {
+                                                                const maxAmount = Math.max(...overviewData.graphs.gross_volume.map(d => d.amount), 1);
+                                                                const height = Math.max((item.amount / maxAmount) * 100, 2);
+                                                                return (
+                                                                    <div key={idx} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                                                        <div
+                                                                            style={{
+                                                                                width: '100%',
+                                                                                height: `${height}%`,
+                                                                                background: 'linear-gradient(to top, #667eea, #764ba2)',
+                                                                                borderRadius: '4px 4px 0 0',
+                                                                                transition: 'all 0.3s',
+                                                                                cursor: 'pointer'
+                                                                            }}
+                                                                            title={`${item.date}: $${item.amount.toFixed(2)}`}
+                                                                        />
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                        <div style={{ color: '#64748b', fontSize: '0.75rem', marginTop: '10px', textAlign: 'center' }}>
+                                                            Last {overviewData.graphs.gross_volume.slice(-30).length} days
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            
+                                            {overviewData.graphs.net_volume && overviewData.graphs.net_volume.length > 0 && (
+                                                <div style={{ marginTop: '20px' }}>
+                                                    <div style={{ color: '#cbd5e1', fontSize: '0.875rem', fontWeight: '600', marginBottom: '10px' }}>📊 Net Volume</div>
+                                                    <div style={{ background: '#1e293b', padding: '15px', borderRadius: '8px', border: '1px solid #334155', overflowX: 'auto' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', minWidth: '600px', height: '150px' }}>
+                                                            {overviewData.graphs.net_volume.slice(-30).map((item, idx) => {
+                                                                const maxAmount = Math.max(...overviewData.graphs.net_volume.map(d => d.amount), 1);
+                                                                const height = Math.max((item.amount / maxAmount) * 100, 2);
+                                                                return (
+                                                                    <div key={idx} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                                                        <div
+                                                                            style={{
+                                                                                width: '100%',
+                                                                                height: `${height}%`,
+                                                                                background: 'linear-gradient(to top, #10b981, #34d399)',
+                                                                                borderRadius: '4px 4px 0 0',
+                                                                                transition: 'all 0.3s',
+                                                                                cursor: 'pointer'
+                                                                            }}
+                                                                            title={`${item.date}: $${item.amount.toFixed(2)}`}
+                                                                        />
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                        <div style={{ color: '#64748b', fontSize: '0.75rem', marginTop: '10px', textAlign: 'center' }}>
+                                                            Last {overviewData.graphs.net_volume.slice(-30).length} days
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            )}
                             
                             {loadingTransactions && !transactionStats && (
                                 <div className="card">
