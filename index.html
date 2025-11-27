@@ -618,6 +618,8 @@
                 try {
                     setLoadingBusinessInfo(true);
                     console.log('🏢 Loading business info...');
+                    console.log('🏢 API URL:', API_URL);
+                    console.log('🏢 API Key:', apiKey ? 'Present' : 'Missing');
                     
                     const response = await fetch(`${API_URL}/get-business-info`, {
                         method: 'POST',
@@ -625,18 +627,23 @@
                         body: JSON.stringify({ apiKey })
                     });
                     
+                    console.log('🏢 Response status:', response.status);
                     const data = await response.json();
+                    console.log('🏢 Response data:', data);
                     
                     if (data.success) {
                         setBusinessInfo(data);
-                        console.log('✅ Business info loaded:', data);
+                        console.log('✅ Business info loaded and state set!');
+                        console.log('✅ Data:', data);
                     } else {
                         console.error('❌ Business info failed:', data.error);
                     }
                 } catch (error) {
                     console.error('❌ Error loading business info:', error);
+                    console.error('❌ Error details:', error.message);
                 } finally {
                     setLoadingBusinessInfo(false);
+                    console.log('🏢 Loading finished. businessInfo state:', businessInfo ? 'Set' : 'Not set');
                 }
             }
             
@@ -1057,6 +1064,7 @@
                             )}
                             
                             {/* Business Info Section */}
+                            {console.log('🏢 Render check - businessInfo:', businessInfo)}
                             {businessInfo && (
                                 <div className="card" style={{ marginBottom: '20px' }}>
                                     <div className="card-title">🏢 Business Information</div>
@@ -1104,11 +1112,11 @@
                                         <div style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', padding: '15px', borderRadius: '8px', border: '2px solid #667eea' }}>
                                             <div style={{ color: '#fff', fontSize: '0.75rem', marginBottom: '5px', opacity: 0.9 }}>Available Balance</div>
                                             <div style={{ color: '#fff', fontSize: '1.3rem', fontWeight: '700' }}>
-                                                {formatAmount(businessInfo.available_balance, businessInfo.default_currency)}
+                                                {getCurrencySymbol(businessInfo.default_currency)}{businessInfo.available_balance.toLocaleString()}
                                             </div>
                                             {businessInfo.pending_balance > 0 && (
                                                 <div style={{ color: '#fff', fontSize: '0.75rem', marginTop: '5px', opacity: 0.8 }}>
-                                                    +{formatAmount(businessInfo.pending_balance, businessInfo.default_currency)} pending
+                                                    +{getCurrencySymbol(businessInfo.default_currency)}{businessInfo.pending_balance.toLocaleString()} pending
                                                 </div>
                                             )}
                                         </div>
