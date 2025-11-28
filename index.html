@@ -182,8 +182,17 @@
             }
         }
         
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
         .overview-content {
-            animation: fadeSlide 0.4s ease-out;
+            animation: fadeSlide 0.5s ease-out;
         }
         
         /* Form */
@@ -1509,7 +1518,29 @@
                                     )}
                                     
                                     {overviewData && (
-                                        <div key={overviewAnimationKey} className="overview-content">
+                                        <div style={{ position: 'relative' }}>
+                                            {loadingOverview && (
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    top: 0,
+                                                    left: 0,
+                                                    right: 0,
+                                                    bottom: 0,
+                                                    background: 'rgba(15, 23, 42, 0.95)',
+                                                    backdropFilter: 'blur(4px)',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    gap: '15px',
+                                                    borderRadius: '8px',
+                                                    zIndex: 10,
+                                                    animation: 'fadeSlide 0.3s ease-out'
+                                                }}>
+                                                    <div className="loading-spinner"></div>
+                                                    <span style={{ color: '#94a3b8', fontWeight: '600' }}>Updating data...</span>
+                                                </div>
+                                            )}
+                                            <div key={overviewAnimationKey} className="overview-content">
                                             <div className="stats-grid" style={{ marginBottom: '20px' }}>
                                                 <div className="stat-card green">
                                                     <div className="stat-label">Succeeded</div>
@@ -1640,6 +1671,7 @@
                                                     📊 No net volume data for this period
                                                 </div>
                                             )}
+                                            </div>
                                         </div>
                                     )}
                                 </div>
