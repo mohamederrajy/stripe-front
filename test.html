@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TEST PAGE - Cache Check</title>
+    <style>
+        body {
+            background: #000;
+            color: #0f0;
+            font-family: monospace;
+            padding: 40px;
+            text-align: center;
+        }
+        h1 { font-size: 48px; margin-bottom: 20px; }
+        p { font-size: 24px; line-height: 1.8; }
+        .success { color: #0f0; }
+        .time { color: #ff0; }
+    </style>
+</head>
+<body>
+    <h1 class="success">✅ SERVER IS WORKING!</h1>
+    <p>This is a test page - Version 2.0</p>
+    <p class="time">Loaded at: <span id="time"></span></p>
+    <p>If you see this, your server is working fine.</p>
+    <p>The issue is browser cache on index.html</p>
+    
+    <script>
+        document.getElementById('time').textContent = new Date().toLocaleString();
+        console.log('✅ TEST PAGE LOADED SUCCESSFULLY at ' + new Date().toLocaleString());
+    </script>
+</body>
+</html>
+
