@@ -1193,6 +1193,78 @@
                                 </div>
                             )}
                             
+                            {/* Payout Settings Section */}
+                            {businessInfo && businessInfo.payout_schedule && (
+                                <div className="card" style={{ marginBottom: '20px' }}>
+                                    <div className="card-title">💳 Payout Schedule</div>
+                                    
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
+                                        <div style={{ background: '#0f172a', padding: '20px', borderRadius: '8px', border: '1px solid #334155', textAlign: 'center' }}>
+                                            <div style={{ fontSize: '2rem', marginBottom: '8px' }}>
+                                                {businessInfo.payout_schedule.interval === 'daily' ? '📅' : 
+                                                 businessInfo.payout_schedule.interval === 'weekly' ? '📆' : 
+                                                 businessInfo.payout_schedule.interval === 'monthly' ? '🗓️' : '✋'}
+                                            </div>
+                                            <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginBottom: '5px', textTransform: 'uppercase' }}>Schedule</div>
+                                            <div style={{ color: '#f8fafc', fontSize: '1.2rem', fontWeight: '700', textTransform: 'capitalize' }}>
+                                                {businessInfo.payout_schedule.interval}
+                                            </div>
+                                        </div>
+                                        
+                                        <div style={{ background: businessInfo.payout_schedule.delay_days <= 2 ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : businessInfo.payout_schedule.delay_days <= 3 ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', padding: '20px', borderRadius: '8px', border: '2px solid', borderColor: businessInfo.payout_schedule.delay_days <= 2 ? '#10b981' : businessInfo.payout_schedule.delay_days <= 3 ? '#f59e0b' : '#667eea', textAlign: 'center' }}>
+                                            <div style={{ fontSize: '2rem', marginBottom: '8px' }}>⏱️</div>
+                                            <div style={{ color: '#fff', fontSize: '0.75rem', marginBottom: '5px', textTransform: 'uppercase', opacity: 0.9 }}>Payout Delay</div>
+                                            <div style={{ color: '#fff', fontSize: '1.8rem', fontWeight: '800' }}>
+                                                {businessInfo.payout_schedule.delay_days}
+                                            </div>
+                                            <div style={{ color: '#fff', fontSize: '0.9rem', fontWeight: '600', marginTop: '2px' }}>
+                                                {businessInfo.payout_schedule.delay_days === 1 ? 'Day' : 'Days'}
+                                            </div>
+                                        </div>
+                                        
+                                        <div style={{ background: businessInfo.instant_payouts_available ? 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' : '#0f172a', padding: '20px', borderRadius: '8px', border: businessInfo.instant_payouts_available ? '2px solid #8b5cf6' : '1px solid #334155', textAlign: 'center' }}>
+                                            <div style={{ fontSize: '2rem', marginBottom: '8px' }}>
+                                                {businessInfo.instant_payouts_available ? '⚡' : '🚫'}
+                                            </div>
+                                            <div style={{ color: businessInfo.instant_payouts_available ? '#fff' : '#94a3b8', fontSize: '0.75rem', marginBottom: '5px', textTransform: 'uppercase', opacity: businessInfo.instant_payouts_available ? 0.9 : 1 }}>Instant Payouts</div>
+                                            <div style={{ color: businessInfo.instant_payouts_available ? '#fff' : '#f8fafc', fontSize: '1.2rem', fontWeight: '700' }}>
+                                                {businessInfo.instant_payouts_available ? 'Available' : 'Not Available'}
+                                            </div>
+                                        </div>
+                                        
+                                        {businessInfo.payout_schedule.weekly_anchor && (
+                                            <div style={{ background: '#0f172a', padding: '20px', borderRadius: '8px', border: '1px solid #334155', textAlign: 'center' }}>
+                                                <div style={{ fontSize: '2rem', marginBottom: '8px' }}>📍</div>
+                                                <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginBottom: '5px', textTransform: 'uppercase' }}>Payout Day</div>
+                                                <div style={{ color: '#f8fafc', fontSize: '1.2rem', fontWeight: '700', textTransform: 'capitalize' }}>
+                                                    {businessInfo.payout_schedule.weekly_anchor}
+                                                </div>
+                                            </div>
+                                        )}
+                                        
+                                        {businessInfo.payout_schedule.monthly_anchor && (
+                                            <div style={{ background: '#0f172a', padding: '20px', borderRadius: '8px', border: '1px solid #334155', textAlign: 'center' }}>
+                                                <div style={{ fontSize: '2rem', marginBottom: '8px' }}>📍</div>
+                                                <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginBottom: '5px', textTransform: 'uppercase' }}>Payout Day</div>
+                                                <div style={{ color: '#f8fafc', fontSize: '1.2rem', fontWeight: '700' }}>
+                                                    {businessInfo.payout_schedule.monthly_anchor}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    
+                                    <div style={{ marginTop: '15px', padding: '12px', background: '#0f172a', borderRadius: '8px', border: '1px solid #334155' }}>
+                                        <div style={{ color: '#94a3b8', fontSize: '0.8rem', lineHeight: '1.5' }}>
+                                            💡 <strong>What this means:</strong> Your payouts are scheduled <strong>{businessInfo.payout_schedule.interval}</strong> with a <strong>{businessInfo.payout_schedule.delay_days}-day</strong> delay. 
+                                            {businessInfo.payout_schedule.delay_days === 7 && ' Standard 7-day rolling schedule.'}
+                                            {businessInfo.payout_schedule.delay_days === 2 && ' Fast 2-day payout schedule!'}
+                                            {businessInfo.payout_schedule.delay_days === 3 && ' Accelerated 3-day payout schedule.'}
+                                            {businessInfo.instant_payouts_available && ' ⚡ You can also request instant payouts for eligible transactions.'}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            
                             <div className="layout">
                                 <div className="card">
                                     <div className="card-title">⚙️ Configuration</div>
