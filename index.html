@@ -171,6 +171,21 @@
             }
         }
         
+        @keyframes fadeSlide {
+            0% {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .overview-content {
+            animation: fadeSlide 0.4s ease-out;
+        }
+        
         /* Form */
         .form-grid {
             display: grid;
@@ -484,6 +499,7 @@
             const [overviewData, setOverviewData] = useState(null);
             const [selectedDateRange, setSelectedDateRange] = useState('all_time');
             const [loadingOverview, setLoadingOverview] = useState(false);
+            const [overviewAnimationKey, setOverviewAnimationKey] = useState(0);
             const [businessInfo, setBusinessInfo] = useState(null);
             const [loadingBusinessInfo, setLoadingBusinessInfo] = useState(false);
             const [paymentPage, setPaymentPage] = useState(1);
@@ -860,6 +876,7 @@
             
             function handleDateRangeChange(range) {
                 setSelectedDateRange(range);
+                setOverviewAnimationKey(prev => prev + 1);
                 getOverviewData(range);
             }
             
@@ -1492,7 +1509,7 @@
                                     )}
                                     
                                     {overviewData && (
-                                        <>
+                                        <div key={overviewAnimationKey} className="overview-content">
                                             <div className="stats-grid" style={{ marginBottom: '20px' }}>
                                                 <div className="stat-card green">
                                                     <div className="stat-label">Succeeded</div>
@@ -1623,7 +1640,7 @@
                                                     📊 No net volume data for this period
                                                 </div>
                                             )}
-                                        </>
+                                        </div>
                                     )}
                                 </div>
                             )}
