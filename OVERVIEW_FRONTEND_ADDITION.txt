@@ -1,0 +1,25 @@
+# Frontend changes needed for Your Overview section
+
+Due to the size of the changes, I'll deploy this via a deployment script that updates the frontend with:
+
+1. **State Management**:
+   - overviewData state
+   - selectedDateRange state ('today', '7days', '4weeks', '6months', '12months', 'all_time')
+   - loadingOverview state
+
+2. **Fetch Function**:
+   - getOverviewData() - fetches from /get-overview endpoint
+
+3. **UI Section** (Add after Customer Stats, before Configuration):
+   - Date range selector buttons
+   - Payment statistics cards (Succeeded, Uncaptured, Refunded, Blocked, Failed)
+   - Balance & Next Payout cards
+   - Simple bar graphs for Gross/Net Volume
+   - Dispute rate indicator
+
+4. **Graph Implementation**:
+   - Using CSS-based bar charts (no external libraries needed)
+   - Responsive design matching dashboard theme
+
+This will be a comprehensive overview dashboard giving you full insight into your Stripe account performance!
+

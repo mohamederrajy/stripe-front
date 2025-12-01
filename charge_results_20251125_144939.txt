@@ -1,0 +1,30 @@
+Stripe Batch Charging Results
+Date: 2025-11-25 14:49:39
+Mode: LIVE
+Amount: $20.00 USD
+
+Successful: 1
+Failed: 4
+
+Total Charged: $20.00
+
+============================================================
+SUCCESSFUL CHARGES:
+============================================================
+skylar jeans - smjeans84@gmail.com - cus_TU2pCUOwC9FndH
+
+============================================================
+FAILED CHARGES:
+============================================================
+Yahia Yakouben - gtlogisticsca@gmail.com - cus_TRjugROrIh8KHr
+  Error: Your card was declined.
+
+Derek Taitano - derektaitano51@gmail.com - cus_TRZp9aDciDvgXm
+  Error: Your card was declined.
+
+Jian Lin - Jianlin19737373@gmail.com - cus_TR7ScjAAmcfGoj
+  Error: Your card was declined.
+
+Nick Hernandez - nickshernandez92@gmail.com - cus_TR34ZF0P9Ll8Mo
+  Error: The PaymentMethod provided (link) is not allowed for this PaymentIntent. Please attach a PaymentMethod of one of the following types: card. Alternatively, update the allowed payment_method_types for this PaymentIntent to include "link".
+
