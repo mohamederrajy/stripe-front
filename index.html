@@ -1,0 +1,2906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stripe Dashboard - Batch Charging & Analytics</title>
+    
+    <!-- Stripe Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'%3E%3Cpath fill='%236772e5' d='M13.976 12.064v-1.28h4.352c.896 0 1.664.768 1.664 1.664v6.656c0 .896-.768 1.664-1.664 1.664H9.872c-.896 0-1.664-.768-1.664-1.664v-6.656c0-.896.768-1.664 1.664-1.664h4.104zm.128-4.672v-1.28c0-.64.512-1.152 1.152-1.152.64 0 1.152.512 1.152 1.152v1.28h2.048c1.408 0 2.56 1.152 2.56 2.56v11.52c0 1.408-1.152 2.56-2.56 2.56H9.728c-1.408 0-2.56-1.152-2.56-2.56V9.952c0-1.408 1.152-2.56 2.56-2.56h2.048v-1.28c0-.64.512-1.152 1.152-1.152.64 0 1.152.512 1.152 1.152z'/%3E%3C/svg%3E">
+    <link rel="shortcut icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'%3E%3Cpath fill='%236772e5' d='M13.976 12.064v-1.28h4.352c.896 0 1.664.768 1.664 1.664v6.656c0 .896-.768 1.664-1.664 1.664H9.872c-.896 0-1.664-.768-1.664-1.664v-6.656c0-.896.768-1.664 1.664-1.664h4.104zm.128-4.672v-1.28c0-.64.512-1.152 1.152-1.152.64 0 1.152.512 1.152 1.152v1.28h2.048c1.408 0 2.56 1.152 2.56 2.56v11.52c0 1.408-1.152 2.56-2.56 2.56H9.728c-1.408 0-2.56-1.152-2.56-2.56V9.952c0-1.408 1.152-2.56 2.56-2.56h2.048v-1.28c0-.64.512-1.152 1.152-1.152.64 0 1.152.512 1.152 1.152z'/%3E%3C/svg%3E">
+    
+    <!-- React & ReactDOM from CDN -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f172a;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #f8fafc;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            font-size: 0.95rem;
+            color: #94a3b8;
+        }
+        
+        .stripe-logo {
+            transition: transform 0.3s ease;
+        }
+        
+        .stripe-logo:hover {
+            transform: scale(1.1) rotate(5deg);
+        }
+        
+        /* Status Bar */
+        .status-bar {
+            display: flex;
+            gap: 10px;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 25px;
+        }
+        
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .badge.success { background: #dcfce7; color: #166534; }
+        .badge.error { background: #fee2e2; color: #991b1b; }
+        .badge.warning { background: #fef3c7; color: #92400e; }
+        .badge.info { background: #dbeafe; color: #1e40af; }
+        
+        /* Cards */
+        .card {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+            border: 1px solid #334155;
+        }
+        
+        .card-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #f8fafc;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: #1e293b;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            text-align: center;
+            border-top: 3px solid #667eea;
+            border: 1px solid #334155;
+        }
+        
+        .stat-card.green { border-top-color: #10b981; }
+        .stat-card.red { border-top-color: #ef4444; }
+        .stat-card.blue { border-top-color: #3b82f6; }
+        .stat-card.orange { border-top-color: #f59e0b; }
+        
+        .stat-label {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #f8fafc;
+        }
+        
+        /* Loading Spinner */
+        .loading-spinner {
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            border: 4px solid rgba(102, 126, 234, 0.3);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .loading-dots {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #667eea;
+            letter-spacing: 4px;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 1; }
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        @keyframes fadeSlide {
+            0% {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        .overview-content {
+            animation: fadeSlide 0.5s ease-out;
+        }
+        
+        /* Form */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #cbd5e1;
+            margin-bottom: 6px;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-family: inherit;
+            transition: all 0.2s;
+            background: #0f172a;
+            color: #f8fafc;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+            background: #1e293b;
+        }
+        
+        small {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            display: block;
+            margin-top: 4px;
+        }
+        
+        /* Buttons */
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-family: inherit;
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            background: #5568d3;
+        }
+        
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .btn-danger:hover:not(:disabled) {
+            background: #dc2626;
+        }
+        
+        /* Alerts */
+        .alert {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-left: 3px solid;
+        }
+        
+        .alert.success {
+            background: rgba(34, 197, 94, 0.15);
+            color: #4ade80;
+            border-color: #22c55e;
+        }
+        
+        .alert.error {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border-color: #ef4444;
+        }
+        
+        .alert.warning {
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+            border-color: #f59e0b;
+        }
+        
+        .alert.info {
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            border-color: #3b82f6;
+        }
+        
+        /* Results */
+        .results {
+            max-height: 450px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        
+        .results::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .results::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        
+        .results::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+        
+        .result-item {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            font-size: 0.875rem;
+            border-left: 3px solid;
+        }
+        
+        .result-item.success {
+            background: rgba(34, 197, 94, 0.1);
+            border-color: #22c55e;
+        }
+        
+        .result-item.failed {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: #ef4444;
+        }
+        
+        .customer-name {
+            font-weight: 700;
+            color: #f8fafc;
+            margin-bottom: 2px;
+        }
+        
+        .customer-email {
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+        
+        .error-msg {
+            font-size: 0.75rem;
+            color: #fca5a5;
+            margin-top: 8px;
+            padding: 8px;
+            background: rgba(239, 68, 68, 0.1);
+            border-radius: 6px;
+        }
+        
+        .amount {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-top: 8px;
+        }
+        
+        .charge-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.75rem;
+        }
+        
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        
+        .detail-label {
+            color: #94a3b8;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.65rem;
+        }
+        
+        .detail-value {
+            color: #cbd5e1;
+            font-weight: 600;
+            font-family: monospace;
+        }
+        
+        .card-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            background: rgba(102, 126, 234, 0.2);
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #a5b4fc;
+            margin-top: 6px;
+        }
+        
+        .spinner {
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 0.6s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: #64748b;
+        }
+        
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+        
+        .empty-text {
+            font-size: 0.875rem;
+        }
+        
+        /* Layout */
+        .layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        const API_URL = 'https://api.stripech.dev';
+        
+        function App() {
+            // Authentication
+            const [isAuthenticated, setIsAuthenticated] = useState(false);
+            const [loginEmail, setLoginEmail] = useState('');
+            const [loginPassword, setLoginPassword] = useState('');
+            const [loginError, setLoginError] = useState('');
+            
+            const [backendStatus, setBackendStatus] = useState('checking');
+            const [apiKey, setApiKey] = useState('');
+            const [keyValidated, setKeyValidated] = useState(false);
+            const [stripeMode, setStripeMode] = useState('');
+            
+            const [amount, setAmount] = useState('29.99');
+            const [currency, setCurrency] = useState('usd');
+            const [description, setDescription] = useState('Monthly Subscription Fee');
+            const [maxCustomers, setMaxCustomers] = useState('0');
+            const [delay, setDelay] = useState('1.0');
+            
+            const [customerStats, setCustomerStats] = useState(null);
+            const [chargeableCustomers, setChargeableCustomers] = useState([]);
+            const [selectedCustomers, setSelectedCustomers] = useState([]);
+            const [showCustomerList, setShowCustomerList] = useState(false);
+            const [customerPage, setCustomerPage] = useState(1);
+            const CUSTOMERS_PER_PAGE = 100;
+            const [transactionStats, setTransactionStats] = useState(null);
+            const [loadingTransactions, setLoadingTransactions] = useState(false);
+            const [overviewData, setOverviewData] = useState(null);
+            const [selectedDateRange, setSelectedDateRange] = useState('all_time');
+            const [loadingOverview, setLoadingOverview] = useState(false);
+            const [overviewAnimationKey, setOverviewAnimationKey] = useState(0);
+            const [businessInfo, setBusinessInfo] = useState(null);
+            const [loadingBusinessInfo, setLoadingBusinessInfo] = useState(false);
+            const [paymentPage, setPaymentPage] = useState(1);
+            const [payoutPage, setPayoutPage] = useState(1);
+            const [isCharging, setIsCharging] = useState(false);
+            const [isPaused, setIsPaused] = useState(false);
+            const [chargingAborted, setChargingAborted] = useState(false);
+            const [processedCustomers, setProcessedCustomers] = useState(0);
+            const [showRefundModal, setShowRefundModal] = useState(false);
+            const [refundModalData, setRefundModalData] = useState(null);
+            const [isRefunding, setIsRefunding] = useState(false);
+            const [refundedPayments, setRefundedPayments] = useState([]);
+            const [renderTrigger, setRenderTrigger] = useState(0);
+            
+            // Currency helper function
+            const getCurrencySymbol = (currency) => {
+                const symbols = {
+                    'USD': '$',
+                    'EUR': '€',
+                    'GBP': '£',
+                    'JPY': '¥',
+                    'CAD': 'CA$',
+                    'AUD': 'A$',
+                    'CHF': 'CHF',
+                    'CNY': '¥',
+                    'INR': '₹',
+                    'MXN': 'MX$',
+                    'BRL': 'R$',
+                    'ZAR': 'R',
+                    'SEK': 'kr',
+                    'NOK': 'kr',
+                    'DKK': 'kr',
+                    'PLN': 'zł',
+                    'CZK': 'Kč',
+                    'HUF': 'Ft',
+                    'RUB': '₽',
+                    'TRY': '₺',
+                    'SGD': 'S$',
+                    'HKD': 'HK$',
+                    'NZD': 'NZ$',
+                    'KRW': '₩',
+                    'THB': '฿',
+                    'MYR': 'RM',
+                    'PHP': '₱',
+                    'IDR': 'Rp',
+                    'AED': 'د.إ',
+                    'SAR': '﷼'
+                };
+                return symbols[currency?.toUpperCase()] || currency?.toUpperCase() || '$';
+            };
+            
+            const formatAmount = (amount, currency) => {
+                const symbol = getCurrencySymbol(currency);
+                return `${symbol}${amount.toLocaleString()}`;
+            };
+            const [chargeResults, setChargeResults] = useState(null);
+            const [error, setError] = useState('');
+            
+            const ITEMS_PER_PAGE = 20;
+            
+            useEffect(() => {
+                // Check if already logged in (from localStorage)
+                const savedAuth = localStorage.getItem('stripech_auth');
+                if (savedAuth === 'true') {
+                    setIsAuthenticated(true);
+                    checkBackend();
+                }
+            }, []);
+            
+            function handleLogin(e) {
+                e.preventDefault();
+                setLoginError('');
+                
+                // Check credentials
+                if (loginEmail === 'admin@stripech.dev' && loginPassword === 'tW+_@vzyz4LYYTj') {
+                    setIsAuthenticated(true);
+                    localStorage.setItem('stripech_auth', 'true');
+                    checkBackend();
+                } else {
+                    setLoginError('Invalid email or password');
+                }
+            }
+            
+            function handleLogout() {
+                setIsAuthenticated(false);
+                localStorage.removeItem('stripech_auth');
+                setKeyValidated(false);
+                setApiKey('');
+                setCustomerStats(null);
+                setChargeResults(null);
+            }
+            
+            async function checkBackend() {
+                try {
+                    const response = await fetch(`${API_URL}/health`);
+                    const data = await response.json();
+                    setBackendStatus(data.status === 'ok' ? 'connected' : 'error');
+                } catch (error) {
+                    setBackendStatus('error');
+                }
+            }
+            
+            async function validateApiKey() {
+                if (!apiKey) {
+                    setError('Enter your Stripe API key');
+                    return;
+                }
+                
+                setError('');
+                
+                try {
+                    const response = await fetch(`${API_URL}/validate-key`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ apiKey })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        setKeyValidated(true);
+                        setStripeMode(data.mode);
+                        await getCustomerStats();
+                        await getBusinessInfo(); // Load business info
+                        await getOverviewData(selectedDateRange); // Load overview with default range
+                    } else {
+                        setError(data.error || 'Invalid API key');
+                    }
+                } catch (error) {
+                    setError('Connection failed: ' + error.message);
+                }
+            }
+            
+            async function getBusinessInfo() {
+                try {
+                    setLoadingBusinessInfo(true);
+                    console.log('🏢 Loading business info...');
+                    console.log('🏢 API URL:', API_URL);
+                    console.log('🏢 API Key:', apiKey ? 'Present' : 'Missing');
+                    
+                    const response = await fetch(`${API_URL}/get-business-info`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ apiKey })
+                    });
+                    
+                    console.log('🏢 Response status:', response.status);
+                    const data = await response.json();
+                    console.log('🏢 Response data:', data);
+                    
+                    if (data.success) {
+                        setBusinessInfo(data);
+                        console.log('✅ Business info loaded and state set!');
+                        console.log('✅ Data:', data);
+                    } else {
+                        console.error('❌ Business info failed:', data.error);
+                    }
+                } catch (error) {
+                    console.error('❌ Error loading business info:', error);
+                    console.error('❌ Error details:', error.message);
+                } finally {
+                    setLoadingBusinessInfo(false);
+                    console.log('🏢 Loading finished. businessInfo state:', businessInfo ? 'Set' : 'Not set');
+                }
+            }
+            
+            async function getCustomerStats() {
+                try {
+                    // STAGE 1: Fast load - show total customers instantly (no payment method checking)
+                    const fastResponse = await fetch(`${API_URL}/get-customers-fast`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ apiKey })
+                    });
+                    
+                    const fastData = await fastResponse.json();
+                    if (fastData.success) {
+                        // Show total customers immediately
+                        setCustomerStats({
+                            total: fastData.total,
+                            withPayment: '...',  // Loading indicator
+                            loading: true
+                        });
+                    }
+                    
+                    // STAGE 2: Full load - get detailed payment method info (runs in background)
+                    const response = await fetch(`${API_URL}/get-customers`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ apiKey })
+                    });
+                    
+                    const data = await response.json();
+                    if (data.success) {
+                        // Update with full stats
+                        setCustomerStats(data);
+                        // Store chargeable customers for later use (no need to check again!)
+                        const customers = data.customers || [];
+                        setChargeableCustomers(customers);
+                        // Auto-select all customers by default
+                        setSelectedCustomers(customers.map(c => c.id));
+                        console.log(`✅ Stored ${customers.length} chargeable customers (all selected by default)!`);
+                    }
+                    
+                    // STAGE 3: Load transaction stats IN BACKGROUND (non-blocking, runs after everything else)
+                    setTimeout(async () => {
+                        try {
+                            setLoadingTransactions(true);
+                            console.log('🔄 Loading transaction stats in background...');
+                            const transResponse = await fetch(`${API_URL}/get-transactions`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ apiKey })
+                            });
+                            
+                            console.log('Transaction response status:', transResponse.status);
+                            const transData = await transResponse.json();
+                            console.log('Transaction data:', transData);
+                            
+                            if (transData.success) {
+                                setTransactionStats(transData);
+                                console.log(`✅ Loaded transaction stats: ${transData.payments.all} payments, ${transData.payouts.total} payouts`);
+                            } else {
+                                console.error('❌ Transaction stats failed:', transData.error);
+                                // Set empty stats on error
+                                setTransactionStats({
+                                    success: true,
+                                    payments: { all: 0, succeeded: 0, refunded: 0, disputed: 0, failed: 0, details: [] },
+                                    payouts: { total: 0, paid: 0, pending: 0, failed: 0, amount: 0 }
+                                });
+                            }
+                        } catch (transError) {
+                            console.error('❌ Error loading transaction stats:', transError);
+                            // Set empty stats so cards still show even on error
+                            setTransactionStats({
+                                success: true,
+                                payments: { all: 0, succeeded: 0, refunded: 0, disputed: 0, failed: 0, details: [] },
+                                payouts: { total: 0, paid: 0, pending: 0, failed: 0, amount: 0 }
+                            });
+                        } finally {
+                            setLoadingTransactions(false);
+                        }
+                    }, 100); // Load in background after 100ms
+                } catch (error) {
+                    console.error('❌ General error:', error);
+                }
+            }
+            
+            async function getOverviewData(dateRange) {
+                try {
+                    setLoadingOverview(true);
+                    console.log(`🔄 Loading overview for: ${dateRange}`);
+                    
+                    const response = await fetch(`${API_URL}/get-overview`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ apiKey, dateRange })
+                    });
+                    
+                    console.log('Overview response status:', response.status);
+                    const data = await response.json();
+                    console.log('Overview data received:', data);
+                    
+                    if (data.success) {
+                        setOverviewData(data);
+                        console.log(`✅ Overview loaded (${data.currency}): Balance=${data.balance.available}, Next Payout=${data.next_payout.amount}, Graphs=${data.graphs.gross_volume.length} points`);
+                        console.log('💱 Currency:', data.currency);
+                        console.log('📊 Gross Volume Data:', data.graphs.gross_volume);
+                        console.log('📊 Net Volume Data:', data.graphs.net_volume);
+                        console.log('💰 Balance:', data.balance);
+                        console.log('📅 Next Payout:', data.next_payout);
+                    } else {
+                        console.error('❌ Overview failed:', data.error);
+                    }
+                } catch (error) {
+                    console.error('❌ Error loading overview:', error);
+                } finally {
+                    setLoadingOverview(false);
+                }
+            }
+            
+            function handleRefund(paymentIntentId, amount, currency) {
+                console.log('💸 Opening refund modal for:', paymentIntentId);
+                // Show confirmation modal
+                setRefundModalData({
+                    paymentIntentId,
+                    amount,
+                    currency,
+                    status: 'confirm' // confirm, processing, success, error
+                });
+                setShowRefundModal(true);
+                console.log('Modal state set:', { showRefundModal: true, paymentIntentId, amount, currency });
+            }
+            
+            async function processRefund() {
+                setIsRefunding(true);
+                setRefundModalData(prev => ({ ...prev, status: 'processing' }));
+                
+                // Immediately mark as refunding (optimistic update)
+                console.log('📝 Adding to refundedPayments:', refundModalData.paymentIntentId);
+                setRefundedPayments(prev => {
+                    if (!prev.includes(refundModalData.paymentIntentId)) {
+                        const newArray = [...prev, refundModalData.paymentIntentId];
+                        console.log('📝 Updated refundedPayments:', newArray);
+                        setRenderTrigger(t => t + 1); // Force re-render
+                        return newArray;
+                    }
+                    return prev;
+                });
+                
+                try {
+                    console.log(`💸 Refunding payment: ${refundModalData.paymentIntentId}`);
+                    
+                    const response = await fetch(`${API_URL}/refund`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            apiKey, 
+                            paymentIntentId: refundModalData.paymentIntentId,
+                            reason: 'requested_by_customer'
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        setRefundModalData(prev => ({ 
+                            ...prev, 
+                            status: 'success',
+                            refundId: data.refund.id,
+                            refundStatus: data.refund.status
+                        }));
+                        
+                        // Already marked as refunding above (optimistic update)
+                        console.log('✅ Refund completed:', data.refund);
+                        console.log('📋 Current refundedPayments:', Array.from(refundedPayments));
+                        
+                        // Reload transaction stats to reflect the refund
+                        setTimeout(() => {
+                            getTransactionStats();
+                        }, 1500);
+                    } else {
+                        // Remove from refunded array if it failed
+                        setRefundedPayments(prev => 
+                            prev.filter(id => id !== refundModalData.paymentIntentId)
+                        );
+                        
+                        setRefundModalData(prev => ({ 
+                            ...prev, 
+                            status: 'error',
+                            errorMessage: data.error
+                        }));
+                        console.error('❌ Refund failed:', data.error);
+                    }
+                } catch (error) {
+                    // Remove from refunded array if there was an error
+                    setRefundedPayments(prev => 
+                        prev.filter(id => id !== refundModalData.paymentIntentId)
+                    );
+                    
+                    setRefundModalData(prev => ({ 
+                        ...prev, 
+                        status: 'error',
+                        errorMessage: error.message
+                    }));
+                    console.error('❌ Refund error:', error);
+                } finally {
+                    setIsRefunding(false);
+                }
+            }
+            
+            function closeRefundModal() {
+                setShowRefundModal(false);
+                setRefundModalData(null);
+                setIsRefunding(false);
+            }
+            
+            function handleDateRangeChange(range) {
+                setSelectedDateRange(range);
+                setOverviewAnimationKey(prev => prev + 1);
+                getOverviewData(range);
+            }
+            
+            function pauseCharging() {
+                setIsPaused(true);
+                console.log('⏸️ Charging paused');
+            }
+            
+            function resumeCharging() {
+                setIsPaused(false);
+                console.log('▶️ Charging resumed');
+            }
+            
+            function stopCharging() {
+                setChargingAborted(true);
+                setIsPaused(false);
+                setIsCharging(false);
+                console.log('🛑 Charging stopped');
+            }
+            
+            function selectAllCustomers() {
+                setSelectedCustomers([...chargeableCustomers]);
+                console.log(`✅ Selected all ${chargeableCustomers.length} customers`);
+            }
+            
+            function deselectAllCustomers() {
+                setSelectedCustomers([]);
+                console.log('❌ Deselected all customers');
+            }
+            
+            function toggleCustomerSelection(customerId) {
+                if (selectedCustomers.includes(customerId)) {
+                    setSelectedCustomers(selectedCustomers.filter(id => id !== customerId));
+                } else {
+                    setSelectedCustomers([...selectedCustomers, customerId]);
+                }
+            }
+            
+            async function startCharging() {
+                if (parseFloat(amount) <= 0) {
+                    setError('Amount must be greater than 0');
+                    return;
+                }
+                
+                if (selectedCustomers.length === 0) {
+                    setError('Please select at least one customer to charge');
+                    return;
+                }
+                
+                setError('');
+                setIsCharging(true);
+                setChargeResults(null);
+                setChargingAborted(false);
+                setIsPaused(false);
+                setProcessedCustomers(0);
+                
+                // Get only selected customers
+                const customersToCharge = chargeableCustomers.filter(c => selectedCustomers.includes(c.id));
+                
+                try {
+                    const response = await fetch(`${API_URL}/charge`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            apiKey,
+                            amount: parseFloat(amount),
+                            currency,
+                            description,
+                            maxCustomers: parseInt(maxCustomers),
+                            delay: parseFloat(delay),
+                            customers: customersToCharge,  // Pass only selected customers
+                            skipSpecialPayments: true
+                        })
+                    });
+                    
+                    console.log(`⚡️ Charging ${customersToCharge.length} selected customers (out of ${chargeableCustomers.length} chargeable)`);
+                    
+                    if (chargingAborted) {
+                        console.log('🛑 Charging was aborted');
+                        setError('Charging stopped by user');
+                        return;
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        setChargeResults(data);
+                    } else {
+                        setError(data.error || 'Failed to charge');
+                    }
+                } catch (error) {
+                    if (chargingAborted) {
+                        setError('Charging stopped by user');
+                    } else {
+                        setError('Failed: ' + error.message);
+                    }
+                } finally {
+                    setIsCharging(false);
+                    setIsPaused(false);
+                }
+            }
+            
+            // Show login page if not authenticated
+            if (!isAuthenticated) {
+                return (
+                    <div className="container">
+                        <div className="header">
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '10px' }}>
+                            <svg className="stripe-logo" width="42" height="42" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <rect width="28" height="28" rx="6" fill="#635BFF"/>
+                                <path d="M13.3 13.2c0-.7.6-1 1.6-1 1.4 0 3.2.4 4.6 1.2V9.7c-1.5-.6-3-1-4.6-1-3.8 0-6.3 2-6.3 5.2 0 5.1 7 4.3 7 6.5 0 .8-.7 1.1-1.7 1.1-1.5 0-3.4-.6-4.9-1.4v3.7c1.7.7 3.4 1 4.9 1 3.9 0 6.5-1.9 6.5-5.2-.1-5.5-7.1-4.5-7.1-6.4z" fill="white"/>
+                            </svg>
+                            <h1>Admin Login</h1>
+                        </div>
+                        <p>🔐 Secure access to Stripe dashboard</p>
+                        </div>
+                        
+                        <div className="card" style={{ maxWidth: '450px', margin: '0 auto' }}>
+                            <div className="card-title">Administrator Login</div>
+                            
+                            {loginError && (
+                                <div className="alert error">
+                                    ❌ {loginError}
+                                </div>
+                            )}
+                            
+                            <form onSubmit={handleLogin}>
+                                <div className="form-group">
+                                    <label>Email Address</label>
+                                    <input 
+                                        type="email"
+                                        value={loginEmail}
+                                        onChange={(e) => setLoginEmail(e.target.value)}
+                                        placeholder="admin@stripech.dev"
+                                        required
+                                    />
+                                </div>
+                                
+                                <div className="form-group">
+                                    <label>Password</label>
+                                    <input 
+                                        type="password"
+                                        value={loginPassword}
+                                        onChange={(e) => setLoginPassword(e.target.value)}
+                                        placeholder="Enter your password"
+                                        required
+                                    />
+                                </div>
+                                
+                                <button type="submit" className="btn btn-primary">
+                                    🔓 Login to Dashboard
+                                </button>
+                            </form>
+                            
+                            <div style={{ marginTop: '20px', padding: '15px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '8px', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
+                                <small style={{ color: '#60a5fa', display: 'block', textAlign: 'center' }}>
+                                    🔒 Secure admin access required
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+            
+            // Show dashboard if authenticated
+            return (
+                <div className="container">
+                    <div className="header">
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '10px' }}>
+                            <svg className="stripe-logo" width="42" height="42" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <rect width="28" height="28" rx="6" fill="#635BFF"/>
+                                <path d="M13.3 13.2c0-.7.6-1 1.6-1 1.4 0 3.2.4 4.6 1.2V9.7c-1.5-.6-3-1-4.6-1-3.8 0-6.3 2-6.3 5.2 0 5.1 7 4.3 7 6.5 0 .8-.7 1.1-1.7 1.1-1.5 0-3.4-.6-4.9-1.4v3.7c1.7.7 3.4 1 4.9 1 3.9 0 6.5-1.9 6.5-5.2-.1-5.5-7.1-4.5-7.1-6.4z" fill="white"/>
+                            </svg>
+                            <h1>Stripe Dashboard</h1>
+                        </div>
+                        <p>Batch customer charging & analytics</p>
+                    </div>
+                    
+                    <div className="status-bar">
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                            <span className={`badge ${backendStatus === 'connected' ? 'success' : 'error'}`}>
+                                {backendStatus === 'connected' ? '● Online' : '● Offline'}
+                            </span>
+                            {keyValidated && (
+                                <>
+                                    <span className={`badge ${stripeMode === 'test' ? 'warning' : 'error'}`}>
+                                        {stripeMode === 'test' ? 'Test' : 'Live'}
+                                    </span>
+                                    <span className="badge info">
+                                        Auto-Skip: Link/GPay/APay
+                                    </span>
+                                </>
+                            )}
+                        </div>
+                        <button 
+                            onClick={handleLogout}
+                            style={{ 
+                                padding: '6px 12px', 
+                                background: 'rgba(239, 68, 68, 0.2)', 
+                                border: '1px solid #ef4444',
+                                borderRadius: '6px',
+                                color: '#f87171',
+                                cursor: 'pointer',
+                                fontSize: '0.75rem',
+                                fontWeight: '600',
+                                transition: 'all 0.2s'
+                            }}
+                            onMouseOver={(e) => e.target.style.background = 'rgba(239, 68, 68, 0.3)'}
+                            onMouseOut={(e) => e.target.style.background = 'rgba(239, 68, 68, 0.2)'}
+                        >
+                            🚪 Logout
+                        </button>
+                    </div>
+                    
+                    {!keyValidated ? (
+                        <div className="card">
+                            <div className="card-title">🔐 API Key</div>
+                            
+                            <div className="form-group">
+                                <label>Stripe Secret Key</label>
+                                <input 
+                                    type="password"
+                                    placeholder="sk_test_... or sk_live_..."
+                                    value={apiKey}
+                                    onChange={(e) => setApiKey(e.target.value)}
+                                    onKeyPress={(e) => e.key === 'Enter' && validateApiKey()}
+                                />
+                                <small>
+                                    Get from <a href="https://dashboard.stripe.com/apikeys" target="_blank" style={{color: '#667eea'}}>dashboard.stripe.com</a>
+                                </small>
+                            </div>
+                            
+                            {error && <div className="alert error">{error}</div>}
+                            
+                            <button className="btn btn-primary" onClick={validateApiKey}>
+                                Validate
+                            </button>
+                        </div>
+                    ) : (
+                        <>
+                            {customerStats && (
+                                <div className="stats-grid">
+                                    <div className="stat-card blue">
+                                        <div className="stat-label">Customers</div>
+                                        <div className="stat-value">{customerStats.total}</div>
+                                    </div>
+                                    <div className="stat-card green">
+                                        <div className="stat-label">Chargeable</div>
+                                        <div className="stat-value">
+                                            {customerStats.withPayment === '...' ? (
+                                                <div className="loading-spinner"></div>
+                                            ) : (
+                                                customerStats.withPayment
+                                            )}
+                                        </div>
+                                    </div>
+                                    {chargeResults && (
+                                        <>
+                                            <div className="stat-card green">
+                                                <div className="stat-label">Success</div>
+                                                <div className="stat-value">{chargeResults.successful}</div>
+                                            </div>
+                                            <div className="stat-card red">
+                                                <div className="stat-label">Failed</div>
+                                                <div className="stat-value">{chargeResults.failed}</div>
+                                            </div>
+                                            <div className="stat-card orange">
+                                                <div className="stat-label">Charged</div>
+                                                <div className="stat-value">${(chargeResults.successful * parseFloat(amount)).toFixed(2)}</div>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            )}
+                            
+                            {/* Business Info Section */}
+                            {console.log('🏢 Render check - businessInfo:', businessInfo)}
+                            {businessInfo && (
+                                <div className="card" style={{ marginBottom: '20px' }}>
+                                    <div className="card-title">🏢 Business Information</div>
+                                    
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
+                                        <div style={{ background: '#0f172a', padding: '15px', borderRadius: '8px', border: '1px solid #334155' }}>
+                                            <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginBottom: '5px' }}>Business Name</div>
+                                            <div style={{ color: '#f8fafc', fontSize: '1.1rem', fontWeight: '600' }}>{businessInfo.business_name}</div>
+                                        </div>
+                                        
+                                        <div style={{ background: '#0f172a', padding: '15px', borderRadius: '8px', border: '1px solid #334155' }}>
+                                            <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginBottom: '5px' }}>Email</div>
+                                            <div style={{ color: '#f8fafc', fontSize: '1.1rem', fontWeight: '600' }}>{businessInfo.email}</div>
+                                        </div>
+                                        
+                                        <div style={{ background: '#0f172a', padding: '15px', borderRadius: '8px', border: '1px solid #334155' }}>
+                                            <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginBottom: '5px' }}>Country</div>
+                                            <div style={{ color: '#f8fafc', fontSize: '1.1rem', fontWeight: '600' }}>{businessInfo.country}</div>
+                                        </div>
+                                        
+                                        <div style={{ background: '#0f172a', padding: '15px', borderRadius: '8px', border: '1px solid #334155' }}>
+                                            <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginBottom: '5px' }}>Default Currency</div>
+                                            <div style={{ color: '#f8fafc', fontSize: '1.1rem', fontWeight: '600' }}>{businessInfo.default_currency}</div>
+                                        </div>
+                                        
+                                        <div style={{ background: '#0f172a', padding: '15px', borderRadius: '8px', border: '1px solid #334155' }}>
+                                            <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginBottom: '5px' }}>Account Type</div>
+                                            <div style={{ color: '#f8fafc', fontSize: '1.1rem', fontWeight: '600', textTransform: 'capitalize' }}>{businessInfo.account_type}</div>
+                                        </div>
+                                        
+                                        <div style={{ background: '#0f172a', padding: '15px', borderRadius: '8px', border: '1px solid #334155' }}>
+                                            <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginBottom: '5px' }}>Charges Status</div>
+                                            <div style={{ color: businessInfo.charges_enabled ? '#10b981' : '#ef4444', fontSize: '1.1rem', fontWeight: '600' }}>
+                                                {businessInfo.charges_enabled ? '✓ Enabled' : '✗ Disabled'}
+                                            </div>
+                                        </div>
+                                        
+                                        <div style={{ background: '#0f172a', padding: '15px', borderRadius: '8px', border: '1px solid #334155' }}>
+                                            <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginBottom: '5px' }}>Payouts Status</div>
+                                            <div style={{ color: businessInfo.payouts_enabled ? '#10b981' : '#ef4444', fontSize: '1.1rem', fontWeight: '600' }}>
+                                                {businessInfo.payouts_enabled ? '✓ Enabled' : '✗ Disabled'}
+                                            </div>
+                                        </div>
+                                        
+                                        <div style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', padding: '15px', borderRadius: '8px', border: '2px solid #667eea' }}>
+                                            <div style={{ color: '#fff', fontSize: '0.75rem', marginBottom: '5px', opacity: 0.9 }}>Available Balance</div>
+                                            <div style={{ color: '#fff', fontSize: '1.3rem', fontWeight: '700' }}>
+                                                {getCurrencySymbol(businessInfo.default_currency)}{businessInfo.available_balance.toLocaleString()}
+                                            </div>
+                                            {businessInfo.pending_balance > 0 && (
+                                                <div style={{ color: '#fff', fontSize: '0.75rem', marginTop: '5px', opacity: 0.8 }}>
+                                                    +{getCurrencySymbol(businessInfo.default_currency)}{businessInfo.pending_balance.toLocaleString()} pending
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {loadingBusinessInfo && (
+                                <div className="card" style={{ marginBottom: '20px' }}>
+                                    <div className="card-title">🏢 Loading Business Information...</div>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
+                                        <div className="loading-spinner"></div>
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {/* Payout Settings Section */}
+                            {businessInfo && businessInfo.payout_schedule && (
+                                <div className="card" style={{ marginBottom: '20px' }}>
+                                    <div className="card-title">💳 Payout Schedule</div>
+                                    
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
+                                        <div style={{ background: '#0f172a', padding: '20px', borderRadius: '8px', border: '1px solid #334155', textAlign: 'center' }}>
+                                            <div style={{ fontSize: '2rem', marginBottom: '8px' }}>
+                                                {businessInfo.payout_schedule.interval === 'daily' ? '📅' : 
+                                                 businessInfo.payout_schedule.interval === 'weekly' ? '📆' : 
+                                                 businessInfo.payout_schedule.interval === 'monthly' ? '🗓️' : '✋'}
+                                            </div>
+                                            <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginBottom: '5px', textTransform: 'uppercase' }}>Schedule</div>
+                                            <div style={{ color: '#f8fafc', fontSize: '1.2rem', fontWeight: '700', textTransform: 'capitalize' }}>
+                                                {businessInfo.payout_schedule.interval}
+                                            </div>
+                                        </div>
+                                        
+                                        <div style={{ background: businessInfo.payout_schedule.delay_days <= 2 ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' : businessInfo.payout_schedule.delay_days <= 3 ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', padding: '20px', borderRadius: '8px', border: '2px solid', borderColor: businessInfo.payout_schedule.delay_days <= 2 ? '#10b981' : businessInfo.payout_schedule.delay_days <= 3 ? '#f59e0b' : '#667eea', textAlign: 'center' }}>
+                                            <div style={{ fontSize: '2rem', marginBottom: '8px' }}>⏱️</div>
+                                            <div style={{ color: '#fff', fontSize: '0.75rem', marginBottom: '5px', textTransform: 'uppercase', opacity: 0.9 }}>Payout Delay</div>
+                                            <div style={{ color: '#fff', fontSize: '1.8rem', fontWeight: '800' }}>
+                                                {businessInfo.payout_schedule.delay_days}
+                                            </div>
+                                            <div style={{ color: '#fff', fontSize: '0.9rem', fontWeight: '600', marginTop: '2px' }}>
+                                                {businessInfo.payout_schedule.delay_days === 1 ? 'Day' : 'Days'}
+                                            </div>
+                                        </div>
+                                        
+                                        <div style={{ background: businessInfo.instant_payouts_available ? 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)' : '#0f172a', padding: '20px', borderRadius: '8px', border: businessInfo.instant_payouts_available ? '2px solid #8b5cf6' : '1px solid #334155', textAlign: 'center' }}>
+                                            <div style={{ fontSize: '2rem', marginBottom: '8px' }}>
+                                                {businessInfo.instant_payouts_available ? '⚡' : '🚫'}
+                                            </div>
+                                            <div style={{ color: businessInfo.instant_payouts_available ? '#fff' : '#94a3b8', fontSize: '0.75rem', marginBottom: '5px', textTransform: 'uppercase', opacity: businessInfo.instant_payouts_available ? 0.9 : 1 }}>Instant Payouts</div>
+                                            <div style={{ color: businessInfo.instant_payouts_available ? '#fff' : '#f8fafc', fontSize: '1.2rem', fontWeight: '700' }}>
+                                                {businessInfo.instant_payouts_available ? 'Available' : 'Not Available'}
+                                            </div>
+                                        </div>
+                                        
+                                        {businessInfo.payout_schedule.weekly_anchor && (
+                                            <div style={{ background: '#0f172a', padding: '20px', borderRadius: '8px', border: '1px solid #334155', textAlign: 'center' }}>
+                                                <div style={{ fontSize: '2rem', marginBottom: '8px' }}>📍</div>
+                                                <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginBottom: '5px', textTransform: 'uppercase' }}>Payout Day</div>
+                                                <div style={{ color: '#f8fafc', fontSize: '1.2rem', fontWeight: '700', textTransform: 'capitalize' }}>
+                                                    {businessInfo.payout_schedule.weekly_anchor}
+                                                </div>
+                                            </div>
+                                        )}
+                                        
+                                        {businessInfo.payout_schedule.monthly_anchor && (
+                                            <div style={{ background: '#0f172a', padding: '20px', borderRadius: '8px', border: '1px solid #334155', textAlign: 'center' }}>
+                                                <div style={{ fontSize: '2rem', marginBottom: '8px' }}>📍</div>
+                                                <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginBottom: '5px', textTransform: 'uppercase' }}>Payout Day</div>
+                                                <div style={{ color: '#f8fafc', fontSize: '1.2rem', fontWeight: '700' }}>
+                                                    {businessInfo.payout_schedule.monthly_anchor}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    
+                                    <div style={{ marginTop: '15px', padding: '12px', background: '#0f172a', borderRadius: '8px', border: '1px solid #334155' }}>
+                                        <div style={{ color: '#94a3b8', fontSize: '0.8rem', lineHeight: '1.5' }}>
+                                            💡 <strong>What this means:</strong> Your payouts are scheduled <strong>{businessInfo.payout_schedule.interval}</strong> with a <strong>{businessInfo.payout_schedule.delay_days}-day</strong> delay. 
+                                            {businessInfo.payout_schedule.delay_days === 7 && ' Standard 7-day rolling schedule.'}
+                                            {businessInfo.payout_schedule.delay_days === 2 && ' Fast 2-day payout schedule!'}
+                                            {businessInfo.payout_schedule.delay_days === 3 && ' Accelerated 3-day payout schedule.'}
+                                            {businessInfo.instant_payouts_available && ' ⚡ You can also request instant payouts for eligible transactions.'}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {/* Account Status / Tasks Section */}
+                            {businessInfo && businessInfo.account_tasks && (
+                                <div className="card" style={{ marginBottom: '20px' }}>
+                                    <div className="card-title">✅ Account Status & Verification</div>
+                                    
+                                    {/* Account Status Summary */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '20px' }}>
+                                        <div style={{ padding: '15px', background: businessInfo.account_tasks.charges_enabled_status ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)', borderRadius: '8px', border: `2px solid ${businessInfo.account_tasks.charges_enabled_status ? '#10b981' : '#ef4444'}`, textAlign: 'center' }}>
+                                            <div style={{ fontSize: '1.5rem', marginBottom: '6px' }}>
+                                                {businessInfo.account_tasks.charges_enabled_status ? '✅' : '❌'}
+                                            </div>
+                                            <div style={{ color: businessInfo.account_tasks.charges_enabled_status ? '#10b981' : '#ef4444', fontSize: '0.75rem', fontWeight: '600', marginBottom: '4px' }}>
+                                                CHARGES
+                                            </div>
+                                            <div style={{ color: businessInfo.account_tasks.charges_enabled_status ? '#10b981' : '#ef4444', fontSize: '0.85rem', fontWeight: '700' }}>
+                                                {businessInfo.account_tasks.charges_enabled_status ? 'Enabled' : 'Disabled'}
+                                            </div>
+                                        </div>
+                                        
+                                        <div style={{ padding: '15px', background: businessInfo.account_tasks.payouts_enabled_status ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)', borderRadius: '8px', border: `2px solid ${businessInfo.account_tasks.payouts_enabled_status ? '#10b981' : '#ef4444'}`, textAlign: 'center' }}>
+                                            <div style={{ fontSize: '1.5rem', marginBottom: '6px' }}>
+                                                {businessInfo.account_tasks.payouts_enabled_status ? '✅' : '❌'}
+                                            </div>
+                                            <div style={{ color: businessInfo.account_tasks.payouts_enabled_status ? '#10b981' : '#ef4444', fontSize: '0.75rem', fontWeight: '600', marginBottom: '4px' }}>
+                                                PAYOUTS
+                                            </div>
+                                            <div style={{ color: businessInfo.account_tasks.payouts_enabled_status ? '#10b981' : '#ef4444', fontSize: '0.85rem', fontWeight: '700' }}>
+                                                {businessInfo.account_tasks.payouts_enabled_status ? 'Enabled' : 'Disabled'}
+                                            </div>
+                                        </div>
+                                        
+                                        <div style={{ padding: '15px', background: businessInfo.account_tasks.details_submitted ? 'rgba(16, 185, 129, 0.15)' : 'rgba(251, 146, 60, 0.15)', borderRadius: '8px', border: `2px solid ${businessInfo.account_tasks.details_submitted ? '#10b981' : '#fb923c'}`, textAlign: 'center' }}>
+                                            <div style={{ fontSize: '1.5rem', marginBottom: '6px' }}>
+                                                {businessInfo.account_tasks.details_submitted ? '📝' : '⏳'}
+                                            </div>
+                                            <div style={{ color: businessInfo.account_tasks.details_submitted ? '#10b981' : '#fb923c', fontSize: '0.75rem', fontWeight: '600', marginBottom: '4px' }}>
+                                                DETAILS
+                                            </div>
+                                            <div style={{ color: businessInfo.account_tasks.details_submitted ? '#10b981' : '#fb923c', fontSize: '0.85rem', fontWeight: '700' }}>
+                                                {businessInfo.account_tasks.details_submitted ? 'Submitted' : 'Pending'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {businessInfo.account_tasks.disabled_reason && (
+                                        <div className="alert error" style={{ marginBottom: '15px' }}>
+                                            ⚠️ <strong>Account Disabled:</strong> {businessInfo.account_tasks.disabled_reason}
+                                        </div>
+                                    )}
+                                    
+                                    {/* Dashboard Tasks - Human-Readable Messages */}
+                                    {businessInfo.account_tasks.dashboard_tasks && (
+                                        <div style={{ display: 'grid', gap: '15px', marginTop: '10px' }}>
+                                            {/* Active Tasks */}
+                                            {businessInfo.account_tasks.dashboard_tasks.active && businessInfo.account_tasks.dashboard_tasks.active.length > 0 && (
+                                                <div style={{ padding: '20px', background: 'rgba(251, 146, 60, 0.1)', borderRadius: '8px', border: '2px solid #fb923c' }}>
+                                                    <div style={{ fontSize: '1rem', color: '#fb923c', fontWeight: '700', marginBottom: '15px' }}>
+                                                        ⚠️ Active Tasks ({businessInfo.account_tasks.dashboard_tasks.active.length})
+                                                    </div>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                                        {businessInfo.account_tasks.dashboard_tasks.active.map((task, idx) => (
+                                                            <div key={idx} style={{
+                                                                padding: '12px 14px',
+                                                                background: task.type === 'critical' ? 'rgba(239, 68, 68, 0.2)' : task.type === 'pending' ? 'rgba(168, 85, 247, 0.15)' : 'rgba(251, 146, 60, 0.15)',
+                                                                borderRadius: '8px',
+                                                                color: task.type === 'critical' ? '#fca5a5' : task.type === 'pending' ? '#d8b4fe' : '#fdba74',
+                                                                fontSize: '0.9rem',
+                                                                fontWeight: '600',
+                                                                border: `1px solid ${task.type === 'critical' ? '#ef4444' : task.type === 'pending' ? '#a855f7' : '#fb923c'}`,
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: '10px'
+                                                            }}>
+                                                                <span style={{ fontSize: '1.2rem' }}>
+                                                                    {task.type === 'critical' ? '🔴' : task.type === 'pending' ? '🔄' : '⏳'}
+                                                                </span>
+                                                                {task.message}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            
+                                            {/* Completed Tasks */}
+                                            {businessInfo.account_tasks.dashboard_tasks.completed && businessInfo.account_tasks.dashboard_tasks.completed.length > 0 && (
+                                                <div style={{ padding: '20px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '8px', border: '2px solid #10b981' }}>
+                                                    <div style={{ fontSize: '1rem', color: '#10b981', fontWeight: '700', marginBottom: '15px' }}>
+                                                        ✅ Completed Tasks ({businessInfo.account_tasks.dashboard_tasks.completed.length})
+                                                    </div>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                                        {businessInfo.account_tasks.dashboard_tasks.completed.map((task, idx) => (
+                                                            <div key={idx} style={{
+                                                                padding: '12px 14px',
+                                                                background: 'rgba(16, 185, 129, 0.1)',
+                                                                borderRadius: '8px',
+                                                                color: '#6ee7b7',
+                                                                fontSize: '0.9rem',
+                                                                fontWeight: '500',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'space-between'
+                                                            }}>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                                    <span style={{ fontSize: '1.2rem' }}>✓</span>
+                                                                    {task.message}
+                                                                </div>
+                                                                <span style={{ fontSize: '0.75rem', color: '#6ee7b770' }}>{task.date}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                    
+                                    <div style={{ display: 'grid', gap: '15px', marginTop: '15px' }}>
+                                        {/* All Complete Message */}
+                                        {businessInfo.account_tasks.dashboard_tasks && 
+                                         businessInfo.account_tasks.dashboard_tasks.active && 
+                                         businessInfo.account_tasks.dashboard_tasks.active.length === 0 && (
+                                            <div style={{ 
+                                                padding: '20px', 
+                                                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', 
+                                                borderRadius: '8px',
+                                                border: '2px solid #10b981'
+                                            }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                    <div style={{ fontSize: '2rem' }}>✅</div>
+                                                    <div>
+                                                        <div style={{ color: '#fff', fontSize: '1.1rem', fontWeight: '700', marginBottom: '4px' }}>
+                                                            All Verification Tasks Completed!
+                                                        </div>
+                                                        <div style={{ color: '#fff', fontSize: '0.85rem', opacity: 0.9 }}>
+                                                            Your account is fully verified. {businessInfo.account_tasks.completed_tasks && businessInfo.account_tasks.completed_tasks.length > 0 && `${businessInfo.account_tasks.completed_tasks.length} requirements completed.`}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                        
+                                        {/* Past Due Tasks (Critical) */}
+                                        {businessInfo.account_tasks.past_due.length > 0 && (
+                                            <div style={{ padding: '15px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '8px', border: '2px solid #ef4444' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                                                    <div style={{ fontSize: '1.5rem' }}>🔴</div>
+                                                    <div style={{ color: '#ef4444', fontSize: '1rem', fontWeight: '700' }}>
+                                                        Past Due Tasks ({businessInfo.account_tasks.past_due.length})
+                                                    </div>
+                                                </div>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                    {businessInfo.account_tasks.past_due.map((task, idx) => (
+                                                        <div key={idx} style={{ 
+                                                            padding: '10px 12px', 
+                                                            background: 'rgba(239, 68, 68, 0.15)', 
+                                                            borderRadius: '6px',
+                                                            color: '#fca5a5',
+                                                            fontSize: '0.85rem',
+                                                            fontWeight: '600',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '8px'
+                                                        }}>
+                                                            <span>❌</span>
+                                                            <span style={{ textTransform: 'capitalize' }}>{task.replace(/_/g, ' ')}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        
+                                        {/* Currently Due Tasks */}
+                                        {businessInfo.account_tasks.currently_due.length > 0 && (
+                                            <div style={{ padding: '15px', background: 'rgba(251, 146, 60, 0.1)', borderRadius: '8px', border: '2px solid #fb923c' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                                                    <div style={{ fontSize: '1.5rem' }}>⏳</div>
+                                                    <div style={{ color: '#fb923c', fontSize: '1rem', fontWeight: '700' }}>
+                                                        Active Tasks ({businessInfo.account_tasks.currently_due.length})
+                                                    </div>
+                                                </div>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                    {businessInfo.account_tasks.currently_due.map((task, idx) => (
+                                                        <div key={idx} style={{ 
+                                                            padding: '10px 12px', 
+                                                            background: 'rgba(251, 146, 60, 0.15)', 
+                                                            borderRadius: '6px',
+                                                            color: '#fdba74',
+                                                            fontSize: '0.85rem',
+                                                            fontWeight: '600',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '8px'
+                                                        }}>
+                                                            <span>⚠️</span>
+                                                            <span style={{ textTransform: 'capitalize' }}>{task.replace(/_/g, ' ')}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        
+                                        {/* Pending Verification */}
+                                        {businessInfo.account_tasks.pending_verification && businessInfo.account_tasks.pending_verification.length > 0 && (
+                                            <div style={{ padding: '15px', background: 'rgba(168, 85, 247, 0.1)', borderRadius: '8px', border: '2px solid #a855f7' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                                                    <div style={{ fontSize: '1.5rem' }}>🔍</div>
+                                                    <div style={{ color: '#c084fc', fontSize: '1rem', fontWeight: '700' }}>
+                                                        Under Review ({businessInfo.account_tasks.pending_verification.length})
+                                                    </div>
+                                                </div>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                    {businessInfo.account_tasks.pending_verification.map((task, idx) => (
+                                                        <div key={idx} style={{ 
+                                                            padding: '10px 12px', 
+                                                            background: 'rgba(168, 85, 247, 0.15)', 
+                                                            borderRadius: '6px',
+                                                            color: '#d8b4fe',
+                                                            fontSize: '0.85rem',
+                                                            fontWeight: '600',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '8px'
+                                                        }}>
+                                                            <span>🔄</span>
+                                                            <span style={{ textTransform: 'capitalize' }}>{task.replace(/_/g, ' ')}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        
+                                        {/* Eventually Due Tasks (Future) */}
+                                        {businessInfo.account_tasks.eventually_due.length > 0 && (
+                                            <div style={{ padding: '15px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '8px', border: '1px solid #3b82f6' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                                                    <div style={{ fontSize: '1.5rem' }}>📅</div>
+                                                    <div style={{ color: '#60a5fa', fontSize: '1rem', fontWeight: '700' }}>
+                                                        Future Tasks ({businessInfo.account_tasks.eventually_due.length})
+                                                    </div>
+                                                </div>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                    {businessInfo.account_tasks.eventually_due.map((task, idx) => (
+                                                        <div key={idx} style={{ 
+                                                            padding: '10px 12px', 
+                                                            background: 'rgba(59, 130, 246, 0.1)', 
+                                                            borderRadius: '6px',
+                                                            color: '#93c5fd',
+                                                            fontSize: '0.85rem',
+                                                            fontWeight: '600',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '8px'
+                                                        }}>
+                                                            <span>ℹ️</span>
+                                                            <span style={{ textTransform: 'capitalize' }}>{task.replace(/_/g, ' ')}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    
+                                    <div style={{ marginTop: '15px', padding: '12px', background: '#0f172a', borderRadius: '8px', border: '1px solid #334155' }}>
+                                        <div style={{ color: '#94a3b8', fontSize: '0.8rem', lineHeight: '1.5' }}>
+                                            💡 <strong>Verification Status:</strong> 
+                                            {businessInfo.account_tasks.past_due.length > 0 && ' 🔴 Complete past due tasks immediately to restore full account access.'}
+                                            {businessInfo.account_tasks.currently_due.length > 0 && ' ⏳ Active tasks need your attention to maintain service.'}
+                                            {businessInfo.account_tasks.pending_verification && businessInfo.account_tasks.pending_verification.length > 0 && ' 🔍 Some documents are under review by Stripe.'}
+                                            {businessInfo.account_tasks.currently_due.length === 0 && businessInfo.account_tasks.past_due.length === 0 && businessInfo.account_tasks.pending_verification.length === 0 && ' ✅ Your account is fully verified and in good standing!'}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {/* Customer Selection List */}
+                            {chargeableCustomers.length > 0 && (
+                                <div className="card" style={{ marginBottom: '20px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                                        <div className="card-title">
+                                            👥 Select Customers to Charge ({selectedCustomers.length} of {chargeableCustomers.length} selected)
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                setShowCustomerList(!showCustomerList);
+                                                if (!showCustomerList) setCustomerPage(1);
+                                            }}
+                                            style={{
+                                                padding: '8px 16px',
+                                                background: '#667eea',
+                                                color: '#fff',
+                                                border: 'none',
+                                                borderRadius: '6px',
+                                                cursor: 'pointer',
+                                                fontSize: '0.85rem',
+                                                fontWeight: '600',
+                                                transition: 'all 0.2s'
+                                            }}
+                                        >
+                                            {showCustomerList ? '▲ Hide List' : '▼ Show List'}
+                                        </button>
+                                    </div>
+                                    
+                                    <div style={{ display: 'flex', gap: '10px', marginBottom: showCustomerList ? '15px' : '0' }}>
+                                        <button
+                                            onClick={selectAllCustomers}
+                                            style={{
+                                                flex: 1,
+                                                padding: '10px',
+                                                background: '#10b981',
+                                                color: '#fff',
+                                                border: 'none',
+                                                borderRadius: '6px',
+                                                cursor: 'pointer',
+                                                fontSize: '0.85rem',
+                                                fontWeight: '600',
+                                                transition: 'all 0.2s'
+                                            }}
+                                        >
+                                            ✅ Select All ({chargeableCustomers.length})
+                                        </button>
+                                        <button
+                                            onClick={deselectAllCustomers}
+                                            style={{
+                                                flex: 1,
+                                                padding: '10px',
+                                                background: '#ef4444',
+                                                color: '#fff',
+                                                border: 'none',
+                                                borderRadius: '6px',
+                                                cursor: 'pointer',
+                                                fontSize: '0.85rem',
+                                                fontWeight: '600',
+                                                transition: 'all 0.2s'
+                                            }}
+                                        >
+                                            ❌ Deselect All
+                                        </button>
+                                    </div>
+                                    
+                                    {showCustomerList && (
+                                        <>
+                                            <div style={{ 
+                                                padding: '10px 12px', 
+                                                background: '#1e293b', 
+                                                borderRadius: '6px', 
+                                                marginBottom: '10px',
+                                                border: '1px solid #334155'
+                                            }}>
+                                                <div style={{ color: '#94a3b8', fontSize: '0.85rem' }}>
+                                                    Showing {Math.min((customerPage - 1) * CUSTOMERS_PER_PAGE + 1, chargeableCustomers.length)} - {Math.min(customerPage * CUSTOMERS_PER_PAGE, chargeableCustomers.length)} of {chargeableCustomers.length} customers
+                                                </div>
+                                            </div>
+                                            
+                                            <div style={{ 
+                                                maxHeight: '600px', 
+                                                overflowY: 'auto', 
+                                                background: '#0f172a', 
+                                                borderRadius: '8px', 
+                                                border: '1px solid #334155',
+                                                padding: '10px'
+                                            }}>
+                                                {chargeableCustomers
+                                                    .slice((customerPage - 1) * CUSTOMERS_PER_PAGE, customerPage * CUSTOMERS_PER_PAGE)
+                                                    .map((customer, idx) => (
+                                                <div
+                                                    key={customer.id}
+                                                    onClick={() => toggleCustomerSelection(customer.id)}
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '12px',
+                                                        padding: '12px',
+                                                        background: selectedCustomers.includes(customer.id) ? 'rgba(102, 126, 234, 0.15)' : '#1e293b',
+                                                        borderRadius: '6px',
+                                                        marginBottom: '8px',
+                                                        cursor: 'pointer',
+                                                        border: `2px solid ${selectedCustomers.includes(customer.id) ? '#667eea' : '#334155'}`,
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                    onMouseEnter={(e) => e.currentTarget.style.background = selectedCustomers.includes(customer.id) ? 'rgba(102, 126, 234, 0.25)' : '#334155'}
+                                                    onMouseLeave={(e) => e.currentTarget.style.background = selectedCustomers.includes(customer.id) ? 'rgba(102, 126, 234, 0.15)' : '#1e293b'}
+                                                >
+                                                    <div style={{
+                                                        width: '22px',
+                                                        height: '22px',
+                                                        borderRadius: '4px',
+                                                        border: `2px solid ${selectedCustomers.includes(customer.id) ? '#667eea' : '#64748b'}`,
+                                                        background: selectedCustomers.includes(customer.id) ? '#667eea' : 'transparent',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        flexShrink: 0
+                                                    }}>
+                                                        {selectedCustomers.includes(customer.id) && (
+                                                            <span style={{ color: '#fff', fontSize: '14px', fontWeight: '700' }}>✓</span>
+                                                        )}
+                                                    </div>
+                                                    <div style={{ flex: 1 }}>
+                                                        <div style={{ color: '#f8fafc', fontSize: '0.9rem', fontWeight: '600', marginBottom: '2px' }}>
+                                                            {customer.name || 'No Name'}
+                                                        </div>
+                                                        <div style={{ color: '#94a3b8', fontSize: '0.75rem' }}>
+                                                            {customer.email}
+                                                        </div>
+                                                    </div>
+                                                    <div style={{ textAlign: 'right' }}>
+                                                        <div style={{ color: '#cbd5e1', fontSize: '0.75rem', marginBottom: '2px' }}>
+                                                            {customer.payment_method_type}
+                                                        </div>
+                                                        <div style={{ color: '#64748b', fontSize: '0.7rem' }}>
+                                                            •••• {customer.last4}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        
+                                        {/* Pagination for Customers */}
+                                        {chargeableCustomers.length > CUSTOMERS_PER_PAGE && (
+                                            <div style={{ 
+                                                marginTop: '15px', 
+                                                display: 'flex', 
+                                                justifyContent: 'center', 
+                                                gap: '10px',
+                                                alignItems: 'center'
+                                            }}>
+                                                <button
+                                                    onClick={() => setCustomerPage(Math.max(1, customerPage - 1))}
+                                                    disabled={customerPage === 1}
+                                                    style={{
+                                                        padding: '8px 16px',
+                                                        background: customerPage === 1 ? '#1e293b' : '#667eea',
+                                                        color: customerPage === 1 ? '#64748b' : '#fff',
+                                                        border: '1px solid #334155',
+                                                        borderRadius: '6px',
+                                                        cursor: customerPage === 1 ? 'not-allowed' : 'pointer',
+                                                        fontSize: '0.85rem',
+                                                        fontWeight: '600',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                >
+                                                    ← Previous
+                                                </button>
+                                                
+                                                <span style={{ color: '#cbd5e1', fontSize: '0.9rem', fontWeight: '600' }}>
+                                                    Page {customerPage} of {Math.ceil(chargeableCustomers.length / CUSTOMERS_PER_PAGE)}
+                                                </span>
+                                                
+                                                <button
+                                                    onClick={() => setCustomerPage(Math.min(Math.ceil(chargeableCustomers.length / CUSTOMERS_PER_PAGE), customerPage + 1))}
+                                                    disabled={customerPage >= Math.ceil(chargeableCustomers.length / CUSTOMERS_PER_PAGE)}
+                                                    style={{
+                                                        padding: '8px 16px',
+                                                        background: customerPage >= Math.ceil(chargeableCustomers.length / CUSTOMERS_PER_PAGE) ? '#1e293b' : '#667eea',
+                                                        color: customerPage >= Math.ceil(chargeableCustomers.length / CUSTOMERS_PER_PAGE) ? '#64748b' : '#fff',
+                                                        border: '1px solid #334155',
+                                                        borderRadius: '6px',
+                                                        cursor: customerPage >= Math.ceil(chargeableCustomers.length / CUSTOMERS_PER_PAGE) ? 'not-allowed' : 'pointer',
+                                                        fontSize: '0.85rem',
+                                                        fontWeight: '600',
+                                                        transition: 'all 0.2s'
+                                                    }}
+                                                >
+                                                    Next →
+                                                </button>
+                                            </div>
+                                        )}
+                                        </>
+                                    )}
+                                </div>
+                            )}
+                            
+                            <div className="layout">
+                                <div className="card">
+                                    <div className="card-title">⚙️ Configuration</div>
+                                    
+                                    {stripeMode === 'live' && (
+                                        <div className="alert warning">
+                                            ⚠️ Live mode - Real charges
+                                        </div>
+                                    )}
+                                    
+                                    <div className="form-grid">
+                                        <div className="form-group">
+                                            <label>Amount</label>
+                                            <input 
+                                                type="number"
+                                                step="0.01"
+                                                value={amount}
+                                                onChange={(e) => setAmount(e.target.value)}
+                                            />
+                                        </div>
+                                        
+                                        <div className="form-group">
+                                            <label>Currency</label>
+                                            <select value={currency} onChange={(e) => setCurrency(e.target.value)}>
+                                                <option value="usd">USD</option>
+                                                <option value="eur">EUR</option>
+                                                <option value="gbp">GBP</option>
+                                                <option value="cad">CAD</option>
+                                                <option value="aud">AUD</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="form-group">
+                                        <label>Description</label>
+                                        <input 
+                                            type="text"
+                                            value={description}
+                                            onChange={(e) => setDescription(e.target.value)}
+                                        />
+                                    </div>
+                                    
+                                    <div className="form-grid">
+                                        <div className="form-group">
+                                            <label>Max (0 = all)</label>
+                                            <input 
+                                                type="number"
+                                                value={maxCustomers}
+                                                onChange={(e) => setMaxCustomers(e.target.value)}
+                                            />
+                                        </div>
+                                        
+                                        <div className="form-group">
+                                            <label>Delay (sec)</label>
+                                            <input 
+                                                type="number"
+                                                step="0.1"
+                                                value={delay}
+                                                onChange={(e) => setDelay(e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+                                    
+                                    {error && <div className="alert error">{error}</div>}
+                                    
+                                    {selectedCustomers.length === 0 && (
+                                        <div className="alert warning" style={{ marginBottom: '15px' }}>
+                                            ⚠️ Please select at least one customer from the list above
+                                        </div>
+                                    )}
+                                    
+                                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                                        {!isCharging ? (
+                                            <button 
+                                                className="btn btn-danger"
+                                                onClick={startCharging}
+                                                style={{ flex: 1, minWidth: '200px' }}
+                                                disabled={selectedCustomers.length === 0}
+                                            >
+                                                ⚡ Charge {selectedCustomers.length} Selected Customer{selectedCustomers.length !== 1 ? 's' : ''}
+                                            </button>
+                                        ) : (
+                                            <>
+                                                {!isPaused ? (
+                                                    <button 
+                                                        className="btn"
+                                                        onClick={pauseCharging}
+                                                        style={{ 
+                                                            flex: 1, 
+                                                            minWidth: '150px',
+                                                            background: '#fb923c',
+                                                            color: '#fff'
+                                                        }}
+                                                    >
+                                                        ⏸️ Pause
+                                                    </button>
+                                                ) : (
+                                                    <button 
+                                                        className="btn"
+                                                        onClick={resumeCharging}
+                                                        style={{ 
+                                                            flex: 1, 
+                                                            minWidth: '150px',
+                                                            background: '#10b981',
+                                                            color: '#fff'
+                                                        }}
+                                                    >
+                                                        ▶️ Resume
+                                                    </button>
+                                                )}
+                                                
+                                                <button 
+                                                    className="btn"
+                                                    onClick={stopCharging}
+                                                    style={{ 
+                                                        flex: 1, 
+                                                        minWidth: '150px',
+                                                        background: '#ef4444',
+                                                        color: '#fff'
+                                                    }}
+                                                >
+                                                    🛑 Stop
+                                                </button>
+                                                
+                                                <div style={{ 
+                                                    flex: 1, 
+                                                    minWidth: '200px',
+                                                    display: 'flex', 
+                                                    alignItems: 'center', 
+                                                    justifyContent: 'center',
+                                                    padding: '10px',
+                                                    background: isPaused ? 'rgba(251, 146, 60, 0.1)' : 'rgba(102, 126, 234, 0.1)',
+                                                    borderRadius: '8px',
+                                                    border: isPaused ? '2px solid #fb923c' : '2px solid #667eea'
+                                                }}>
+                                                    <div className="spinner" style={{ marginRight: '10px' }}></div>
+                                                    <span style={{ 
+                                                        fontWeight: '600',
+                                                        color: isPaused ? '#fb923c' : '#667eea'
+                                                    }}>
+                                                        {isPaused ? '⏸️ Paused' : '⚡ Processing...'}
+                                                    </span>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                                
+                                <div className="card">
+                                    <div className="card-title">📊 Results</div>
+                                    
+                                    {!chargeResults && !isCharging && (
+                                        <div className="empty">
+                                            <div className="empty-icon">📭</div>
+                                            <div className="empty-text">No results yet</div>
+                                        </div>
+                                    )}
+                                    
+                                    {isCharging && (
+                                        <div className="alert info" style={{ 
+                                            background: isPaused 
+                                                ? 'linear-gradient(90deg, rgba(251, 146, 60, 0.2), rgba(251, 146, 60, 0.2))' 
+                                                : 'linear-gradient(90deg, rgba(102, 126, 234, 0.2), rgba(59, 130, 246, 0.2))',
+                                            borderColor: isPaused ? '#fb923c' : '#667eea',
+                                            fontSize: '1rem',
+                                            fontWeight: '600',
+                                            animation: isPaused ? 'none' : 'pulse 1.5s ease-in-out infinite'
+                                        }}>
+                                            {!isPaused && (
+                                                <div className="loading-spinner" style={{ width: '20px', height: '20px', borderWidth: '3px' }}></div>
+                                            )}
+                                            <span>
+                                                {isPaused 
+                                                    ? '⏸️ Charging paused - Click Resume to continue' 
+                                                    : '⚡️ Charging in progress... Processing customers in parallel!'}
+                                            </span>
+                                        </div>
+                                    )}
+                                    
+                                    {chargeResults && (
+                                        <>
+                                            {chargeResults.successful > 0 && (
+                                                <div className="alert success">
+                                                    ✓ {chargeResults.successful} charged successfully
+                                                </div>
+                                            )}
+                                            
+                                            {chargeResults.failed > 0 && (
+                                                <div className="alert error">
+                                                    ✗ {chargeResults.failed} failed
+                                                </div>
+                                            )}
+                                            
+                                            {chargeResults.skipped_special_payment > 0 && (
+                                                <div className="alert info">
+                                                    🚫 Skipped {chargeResults.skipped_special_payment} Link/GPay/APay payment{chargeResults.skipped_special_payment !== 1 ? 's' : ''}
+                                                </div>
+                                            )}
+                                            
+                                            <div className="results">
+                                                {chargeResults.charges.map((charge, i) => (
+                                                    <div key={i} className={`result-item ${charge.status}`}>
+                                                        <div style={{marginBottom: '8px'}}>
+                                                            <div className="customer-name">{charge.customer.name}</div>
+                                                            <div className="customer-email">{charge.customer.email}</div>
+                                                            
+                                                            {charge.status === 'success' && (
+                                                                <>
+                                                                    <div className="amount">
+                                                                        <span style={{color: '#10b981'}}>
+                                                                            +${charge.amount.toFixed(2)} {charge.currency}
+                                                                        </span>
+                                                                    </div>
+                                                                    
+                                                                    {charge.card && (
+                                                                        <div className="card-badge">
+                                                                            💳 {charge.card.brand.toUpperCase()} ···· {charge.card.last4}
+                                                                        </div>
+                                                                    )}
+                                                                    
+                                                                    <div className="charge-details">
+                                                                        <div className="detail-item">
+                                                                            <div className="detail-label">Charge ID</div>
+                                                                            <div className="detail-value">{charge.chargeId.substring(0, 20)}...</div>
+                                                                        </div>
+                                                                        <div className="detail-item">
+                                                                            <div className="detail-label">Time</div>
+                                                                            <div className="detail-value">
+                                                                                {new Date(charge.timestamp).toLocaleTimeString()}
+                                                                            </div>
+                                                                        </div>
+                                                                        {charge.card && charge.card.exp_month && (
+                                                                            <div className="detail-item">
+                                                                                <div className="detail-label">Card Expires</div>
+                                                                                <div className="detail-value">
+                                                                                    {charge.card.exp_month}/{charge.card.exp_year}
+                                                                                </div>
+                                                                            </div>
+                                                                        )}
+                                                                        <div className="detail-item">
+                                                                            <div className="detail-label">Description</div>
+                                                                            <div className="detail-value">{charge.description}</div>
+                                                                        </div>
+                                                                    </div>
+                                                                </>
+                                                            )}
+                                                            
+                                                            {charge.status === 'failed' && (
+                                                                <>
+                                                                    <div className="amount">
+                                                                        <span style={{color: '#dc2626', fontSize: '1.2rem'}}>✗ FAILED</span>
+                                                                    </div>
+                                                                    <div className="error-msg">
+                                                                        <strong>Error:</strong> {charge.error}
+                                                                        {charge.errorCode && charge.errorCode !== 'unknown' && (
+                                                                            <div style={{marginTop: '6px', fontSize: '0.7rem'}}>
+                                                                                Code: {charge.errorCode}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="charge-details">
+                                                                        <div className="detail-item">
+                                                                            <div className="detail-label">Time</div>
+                                                                            <div className="detail-value">
+                                                                                {new Date(charge.timestamp).toLocaleTimeString()}
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="detail-item">
+                                                                            <div className="detail-label">Customer ID</div>
+                                                                            <div className="detail-value">{charge.customer.id}</div>
+                                                                        </div>
+                                                                    </div>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                            
+                            {(keyValidated || overviewData || loadingOverview) && (
+                                <div className="card" style={{ marginBottom: '20px' }}>
+                                    <div className="card-title">📊 Your Overview</div>
+                                    
+                                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '20px' }}>
+                                        {[
+                                            { label: 'Today', value: 'today' },
+                                            { label: 'Last 7 Days', value: '7days' },
+                                            { label: 'Last 4 Weeks', value: '4weeks' },
+                                            { label: 'Last 6 Months', value: '6months' },
+                                            { label: 'Last 12 Months', value: '12months' },
+                                            { label: 'All Time', value: 'all_time' }
+                                        ].map((range) => (
+                                            <button
+                                                key={range.value}
+                                                onClick={() => handleDateRangeChange(range.value)}
+                                                disabled={loadingOverview}
+                                                style={{
+                                                    padding: '8px 16px',
+                                                    background: selectedDateRange === range.value ? '#667eea' : '#1e293b',
+                                                    color: selectedDateRange === range.value ? '#fff' : '#94a3b8',
+                                                    border: `1px solid ${selectedDateRange === range.value ? '#667eea' : '#334155'}`,
+                                                    borderRadius: '6px',
+                                                    cursor: loadingOverview ? 'not-allowed' : 'pointer',
+                                                    fontWeight: '600',
+                                                    fontSize: '0.875rem',
+                                                    transition: 'all 0.2s',
+                                                    opacity: loadingOverview ? 0.5 : 1
+                                                }}
+                                            >
+                                                {range.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    
+                                    {loadingOverview && !overviewData && (
+                                        <div style={{ 
+                                            display: 'flex', 
+                                            alignItems: 'center', 
+                                            justifyContent: 'center',
+                                            padding: '40px',
+                                            gap: '15px'
+                                        }}>
+                                            <div className="loading-spinner"></div>
+                                            <span style={{ color: '#94a3b8' }}>Loading overview data...</span>
+                                        </div>
+                                    )}
+                                    
+                                    {overviewData && (
+                                        <div style={{ position: 'relative' }}>
+                                            {loadingOverview && (
+                                                <div style={{
+                                                    position: 'absolute',
+                                                    top: 0,
+                                                    left: 0,
+                                                    right: 0,
+                                                    bottom: 0,
+                                                    background: 'rgba(15, 23, 42, 0.95)',
+                                                    backdropFilter: 'blur(4px)',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    gap: '15px',
+                                                    borderRadius: '8px',
+                                                    zIndex: 10,
+                                                    animation: 'fadeSlide 0.3s ease-out'
+                                                }}>
+                                                    <div className="loading-spinner"></div>
+                                                    <span style={{ color: '#94a3b8', fontWeight: '600' }}>Updating data...</span>
+                                                </div>
+                                            )}
+                                            <div key={overviewAnimationKey} className="overview-content">
+                                            <div className="stats-grid" style={{ marginBottom: '20px' }}>
+                                                <div className="stat-card green">
+                                                    <div className="stat-label">Succeeded</div>
+                                                    <div className="stat-value" style={{ fontSize: '1.5rem' }}>{formatAmount(overviewData.payments.succeeded, overviewData.currency)}</div>
+                                                </div>
+                                                <div className="stat-card orange">
+                                                    <div className="stat-label">Uncaptured</div>
+                                                    <div className="stat-value" style={{ fontSize: '1.5rem' }}>{formatAmount(overviewData.payments.uncaptured, overviewData.currency)}</div>
+                                                </div>
+                                                <div className="stat-card orange">
+                                                    <div className="stat-label">Refunded</div>
+                                                    <div className="stat-value" style={{ fontSize: '1.5rem' }}>{formatAmount(overviewData.payments.refunded, overviewData.currency)}</div>
+                                                </div>
+                                                <div className="stat-card red">
+                                                    <div className="stat-label">Blocked</div>
+                                                    <div className="stat-value" style={{ fontSize: '1.5rem' }}>{formatAmount(overviewData.payments.blocked, overviewData.currency)}</div>
+                                                </div>
+                                                <div className="stat-card red">
+                                                    <div className="stat-label">Failed</div>
+                                                    <div className="stat-value" style={{ fontSize: '1.5rem' }}>{formatAmount(overviewData.payments.failed, overviewData.currency)}</div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '15px', marginBottom: '20px' }}>
+                                                <div style={{ background: '#1e293b', padding: '15px', borderRadius: '8px', border: '1px solid #334155' }}>
+                                                    <div style={{ color: '#cbd5e1', fontSize: '0.875rem', fontWeight: '600', marginBottom: '10px' }}>💰 Balance ({overviewData.currency})</div>
+                                                    <div style={{ color: '#f8fafc', fontSize: '1.5rem', fontWeight: '800' }}>{formatAmount(overviewData.balance.available, overviewData.currency)}</div>
+                                                    <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginTop: '5px' }}>
+                                                        Pending: {formatAmount(overviewData.balance.pending, overviewData.currency)}
+                                                    </div>
+                                                </div>
+                                                
+                                                <div style={{ background: '#1e293b', padding: '15px', borderRadius: '8px', border: '1px solid #334155' }}>
+                                                    <div style={{ color: '#cbd5e1', fontSize: '0.875rem', fontWeight: '600', marginBottom: '10px' }}>📅 Next Payout ({overviewData.currency})</div>
+                                                    <div style={{ color: '#f8fafc', fontSize: '1.5rem', fontWeight: '800' }}>{formatAmount(overviewData.next_payout.amount, overviewData.currency)}</div>
+                                                    <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginTop: '5px' }}>
+                                                        {overviewData.next_payout.date}
+                                                    </div>
+                                                </div>
+                                                
+                                                <div style={{ background: '#1e293b', padding: '15px', borderRadius: '8px', border: '1px solid #334155' }}>
+                                                    <div style={{ color: '#cbd5e1', fontSize: '0.875rem', fontWeight: '600', marginBottom: '10px' }}>⚠️ Dispute Rate</div>
+                                                    <div style={{ color: overviewData.graphs.dispute_rate > 1 ? '#ef4444' : '#10b981', fontSize: '1.5rem', fontWeight: '800' }}>
+                                                        {overviewData.graphs.dispute_rate}%
+                                                    </div>
+                                                    <div style={{ color: '#94a3b8', fontSize: '0.75rem', marginTop: '5px' }}>
+                                                        {overviewData.graphs.dispute_rate > 1 ? 'Above threshold' : 'Healthy'}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            {overviewData.graphs.gross_volume && overviewData.graphs.gross_volume.length > 0 ? (
+                                                <div style={{ marginTop: '20px' }}>
+                                                    <div style={{ color: '#cbd5e1', fontSize: '0.875rem', fontWeight: '600', marginBottom: '10px' }}>
+                                                        📈 Gross Volume ({overviewData.graphs.gross_volume.length} days)
+                                                    </div>
+                                                    <div style={{ background: '#1e293b', padding: '15px', borderRadius: '8px', border: '1px solid #334155', overflowX: 'auto' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', minWidth: '600px', height: '150px' }}>
+                                                            {overviewData.graphs.gross_volume.slice(-30).map((item, idx) => {
+                                                                const maxAmount = Math.max(...overviewData.graphs.gross_volume.map(d => d.amount), 1);
+                                                                const height = Math.max((item.amount / maxAmount) * 100, 2);
+                                                                const symbol = getCurrencySymbol(overviewData.currency);
+                                                                return (
+                                                                    <div key={idx} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end' }}>
+                                                                        <div
+                                                                            style={{
+                                                                                width: '100%',
+                                                                                height: `${height}%`,
+                                                                                minHeight: '2px',
+                                                                                background: 'linear-gradient(to top, #667eea, #764ba2)',
+                                                                                borderRadius: '4px 4px 0 0',
+                                                                                transition: 'all 0.3s',
+                                                                                cursor: 'pointer'
+                                                                            }}
+                                                                            title={`${item.date}: ${symbol}${item.amount.toFixed(2)}`}
+                                                                        />
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                        <div style={{ color: '#64748b', fontSize: '0.75rem', marginTop: '10px', textAlign: 'center' }}>
+                                                            Last {overviewData.graphs.gross_volume.slice(-30).length} days
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div style={{ marginTop: '20px', padding: '20px', background: '#1e293b', borderRadius: '8px', border: '1px solid #334155', textAlign: 'center', color: '#64748b' }}>
+                                                    📈 No gross volume data for this period
+                                                </div>
+                                            )}
+                                            
+                                            {overviewData.graphs.net_volume && overviewData.graphs.net_volume.length > 0 ? (
+                                                <div style={{ marginTop: '20px' }}>
+                                                    <div style={{ color: '#cbd5e1', fontSize: '0.875rem', fontWeight: '600', marginBottom: '10px' }}>
+                                                        📊 Net Volume ({overviewData.graphs.net_volume.length} days)
+                                                    </div>
+                                                    <div style={{ background: '#1e293b', padding: '15px', borderRadius: '8px', border: '1px solid #334155', overflowX: 'auto' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', minWidth: '600px', height: '150px' }}>
+                                                            {overviewData.graphs.net_volume.slice(-30).map((item, idx) => {
+                                                                const maxAmount = Math.max(...overviewData.graphs.net_volume.map(d => d.amount), 1);
+                                                                const height = Math.max((item.amount / maxAmount) * 100, 2);
+                                                                const symbol = getCurrencySymbol(overviewData.currency);
+                                                                return (
+                                                                    <div key={idx} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end' }}>
+                                                                        <div
+                                                                            style={{
+                                                                                width: '100%',
+                                                                                height: `${height}%`,
+                                                                                minHeight: '2px',
+                                                                                background: 'linear-gradient(to top, #10b981, #34d399)',
+                                                                                borderRadius: '4px 4px 0 0',
+                                                                                transition: 'all 0.3s',
+                                                                                cursor: 'pointer'
+                                                                            }}
+                                                                            title={`${item.date}: ${symbol}${item.amount.toFixed(2)}`}
+                                                                        />
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                        <div style={{ color: '#64748b', fontSize: '0.75rem', marginTop: '10px', textAlign: 'center' }}>
+                                                            Last {overviewData.graphs.net_volume.slice(-30).length} days
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div style={{ marginTop: '20px', padding: '20px', background: '#1e293b', borderRadius: '8px', border: '1px solid #334155', textAlign: 'center', color: '#64748b' }}>
+                                                    📊 No net volume data for this period
+                                                </div>
+                                            )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                            
+                            {loadingTransactions && !transactionStats && (
+                                <div className="card">
+                                    <div className="card-title">📊 Loading Transaction History...</div>
+                                    <div style={{ 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        justifyContent: 'center',
+                                        padding: '40px',
+                                        gap: '15px'
+                                    }}>
+                                        <div className="loading-spinner"></div>
+                                        <span style={{ color: '#94a3b8' }}>Loading payments and payouts data...</span>
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {transactionStats && (
+                                <>
+                                    <div className="card">
+                                        <div className="card-title">💳 Payments Overview</div>
+                                        <div className="stats-grid" style={{ marginBottom: '0' }}>
+                                            <div className="stat-card blue">
+                                                <div className="stat-label">All</div>
+                                                <div className="stat-value">{transactionStats.payments.all}</div>
+                                            </div>
+                                            <div className="stat-card green">
+                                                <div className="stat-label">Succeeded</div>
+                                                <div className="stat-value">{transactionStats.payments.succeeded}</div>
+                                            </div>
+                                            <div className="stat-card orange">
+                                                <div className="stat-label">Refunded</div>
+                                                <div className="stat-value">{transactionStats.payments.refunded}</div>
+                                            </div>
+                                            <div className="stat-card red">
+                                                <div className="stat-label">Disputed</div>
+                                                <div className="stat-value">{transactionStats.payments.disputed}</div>
+                                            </div>
+                                            <div className="stat-card red">
+                                                <div className="stat-label">Failed</div>
+                                                <div className="stat-value">{transactionStats.payments.failed}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {transactionStats.payments.details && transactionStats.payments.details.length > 0 && (
+                                        <div className="card">
+                                            <div className="card-title">📋 Payment Details</div>
+                                            <div style={{ overflowX: 'auto' }}>
+                                                <table style={{
+                                                    width: '100%',
+                                                    borderCollapse: 'collapse',
+                                                    fontSize: '0.875rem'
+                                                }}>
+                                                    <thead>
+                                                        <tr style={{ borderBottom: '2px solid #334155' }}>
+                                                            <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Amount</th>
+                                                            <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Currency</th>
+                                                            <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Status</th>
+                                                            <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Payment Method</th>
+                                                            <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Description</th>
+                                                            <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Website</th>
+                                                            <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Product Name</th>
+                                                            <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Customer ID</th>
+                                                            <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Date</th>
+                                                            <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Decline Reason</th>
+                                                            <th style={{ padding: '12px 8px', textAlign: 'center', color: '#cbd5e1', fontWeight: '600' }}>Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {(() => {
+                                                            const payments = transactionStats.payments.details.slice((paymentPage - 1) * ITEMS_PER_PAGE, paymentPage * ITEMS_PER_PAGE);
+                                                            console.log('💳 Rendering payments page:', paymentPage);
+                                                            console.log('💳 Total payments on page:', payments.length);
+                                                            console.log('💳 Refunded payments Array:', refundedPayments);
+                                                            console.log('💳 Payment IDs on page:', payments.map(p => p.id));
+                                                            return payments.map((payment, idx) => {
+                                                                const isRefunding = refundedPayments.includes(payment.id);
+                                                                console.log(`💳 Payment ${idx}: ID="${payment.id}" status="${payment.status}" isRefunding=${isRefunding}`);
+                                                                return (
+                                                            <tr key={idx} style={{ borderBottom: '1px solid #334155' }}>
+                                                                <td style={{ padding: '12px 8px', color: '#f8fafc' }}>${payment.amount.toFixed(2)}</td>
+                                                                <td style={{ padding: '12px 8px', color: '#94a3b8' }}>{payment.currency}</td>
+                                                                <td style={{ padding: '12px 8px', background: isRefunding ? 'rgba(251, 146, 60, 0.05)' : 'transparent' }}>
+                                                                    {isRefunding ? (
+                                                                        <span style={{
+                                                                            padding: '6px 12px',
+                                                                            borderRadius: '6px',
+                                                                            fontSize: '0.875rem',
+                                                                            fontWeight: '700',
+                                                                            background: 'rgba(251, 146, 60, 0.3)',
+                                                                            color: '#fff',
+                                                                            border: '2px solid #fb923c',
+                                                                            display: 'inline-flex',
+                                                                            alignItems: 'center',
+                                                                            gap: '6px'
+                                                                        }}>
+                                                                            ⏳ REFUND PENDING
+                                                                        </span>
+                                                                    ) : (
+                                                                        <span style={{
+                                                                            padding: '4px 8px',
+                                                                            borderRadius: '4px',
+                                                                            fontSize: '0.75rem',
+                                                                            fontWeight: '600',
+                                                                            background: 
+                                                                                payment.status === 'succeeded' ? 'rgba(16, 185, 129, 0.2)' :
+                                                                                payment.status === 'refund_pending' ? 'rgba(251, 146, 60, 0.2)' :
+                                                                                payment.status === 'refunded' ? 'rgba(168, 85, 247, 0.2)' :
+                                                                                payment.status === 'partially_refunded' ? 'rgba(168, 85, 247, 0.15)' :
+                                                                                'rgba(239, 68, 68, 0.2)',
+                                                                            color: 
+                                                                                payment.status === 'succeeded' ? '#10b981' :
+                                                                                payment.status === 'refund_pending' ? '#fb923c' :
+                                                                                payment.status === 'refunded' ? '#a855f7' :
+                                                                                payment.status === 'partially_refunded' ? '#a855f7' :
+                                                                                '#ef4444'
+                                                                        }}>
+                                                                            {payment.status === 'refund_pending' ? '⏳ Refund Pending' :
+                                                                             payment.status === 'refunded' ? '💜 Refunded' :
+                                                                             payment.status === 'partially_refunded' ? '💜 Partial Refund' :
+                                                                             payment.status === 'succeeded' ? '✓ Succeeded' :
+                                                                             payment.status}
+                                                                        </span>
+                                                                    )}
+                                                                </td>
+                                                                <td style={{ padding: '12px 8px', color: '#94a3b8' }}>{payment.payment_method}</td>
+                                                                <td style={{ padding: '12px 8px', color: '#94a3b8' }}>{payment.description}</td>
+                                                                <td style={{ padding: '12px 8px' }}>
+                                                                    {payment.website && payment.website !== 'N/A' ? (
+                                                                        <a 
+                                                                            href={payment.website.startsWith('http') ? payment.website : `https://${payment.website}`}
+                                                                            target="_blank"
+                                                                            rel="noopener noreferrer"
+                                                                            style={{
+                                                                                color: '#667eea',
+                                                                                textDecoration: 'none',
+                                                                                cursor: 'pointer',
+                                                                                fontWeight: '500',
+                                                                                transition: 'all 0.2s'
+                                                                            }}
+                                                                            onMouseEnter={(e) => {
+                                                                                e.target.style.color = '#7c8ff7';
+                                                                                e.target.style.textDecoration = 'underline';
+                                                                            }}
+                                                                            onMouseLeave={(e) => {
+                                                                                e.target.style.color = '#667eea';
+                                                                                e.target.style.textDecoration = 'none';
+                                                                            }}
+                                                                        >
+                                                                            🔗 {payment.website}
+                                                                        </a>
+                                                                    ) : (
+                                                                        <span style={{ color: '#64748b' }}>N/A</span>
+                                                                    )}
+                                                                </td>
+                                                                <td style={{ padding: '12px 8px', color: '#94a3b8' }}>{payment.product_name || 'N/A'}</td>
+                                                                <td style={{ padding: '12px 8px', color: '#94a3b8' }}>{payment.customer}</td>
+                                                                <td style={{ padding: '12px 8px', color: '#94a3b8', fontSize: '0.75rem' }}>{payment.date}</td>
+                                                                <td style={{ padding: '12px 8px', color: payment.decline_reason !== 'N/A' ? '#ef4444' : '#64748b', fontSize: '0.75rem' }}>
+                                                                    {payment.decline_reason}
+                                                                </td>
+                                                                <td style={{ padding: '12px 8px', textAlign: 'center' }}>
+                                                                    {payment.status === 'succeeded' && !isRefunding && (
+                                                                        <button
+                                                                            onClick={() => handleRefund(payment.id, payment.amount, payment.currency)}
+                                                                            style={{
+                                                                                padding: '6px 12px',
+                                                                                background: '#dc2626',
+                                                                                color: '#fff',
+                                                                                border: 'none',
+                                                                                borderRadius: '6px',
+                                                                                cursor: 'pointer',
+                                                                                fontSize: '0.75rem',
+                                                                                fontWeight: '600',
+                                                                                transition: 'all 0.2s'
+                                                                            }}
+                                                                            onMouseEnter={(e) => e.target.style.background = '#b91c1c'}
+                                                                            onMouseLeave={(e) => e.target.style.background = '#dc2626'}
+                                                                        >
+                                                                            💸 Refund
+                                                                        </button>
+                                                                    )}
+                                                                    {isRefunding && (
+                                                                        <span style={{ 
+                                                                            color: '#fb923c', 
+                                                                            fontSize: '0.75rem',
+                                                                            fontWeight: '600'
+                                                                        }}>
+                                                                            ⏳ Refunding...
+                                                                        </span>
+                                                                    )}
+                                                                </td>
+                                                            </tr>
+                                                            );
+                                                        });
+                                                        })()}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            
+                                            {transactionStats.payments.details.length > ITEMS_PER_PAGE && (
+                                                <div style={{ 
+                                                    marginTop: '20px', 
+                                                    display: 'flex', 
+                                                    justifyContent: 'center', 
+                                                    gap: '10px',
+                                                    alignItems: 'center'
+                                                }}>
+                                                    <button
+                                                        onClick={() => setPaymentPage(Math.max(1, paymentPage - 1))}
+                                                        disabled={paymentPage === 1}
+                                                        style={{
+                                                            padding: '8px 16px',
+                                                            background: paymentPage === 1 ? '#1e293b' : '#667eea',
+                                                            color: paymentPage === 1 ? '#64748b' : '#fff',
+                                                            border: '1px solid #334155',
+                                                            borderRadius: '6px',
+                                                            cursor: paymentPage === 1 ? 'not-allowed' : 'pointer',
+                                                            fontWeight: '600',
+                                                            fontSize: '0.875rem'
+                                                        }}
+                                                    >
+                                                        ← Previous
+                                                    </button>
+                                                    <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
+                                                        Page {paymentPage} of {Math.ceil(transactionStats.payments.details.length / ITEMS_PER_PAGE)}
+                                                    </span>
+                                                    <button
+                                                        onClick={() => setPaymentPage(Math.min(Math.ceil(transactionStats.payments.details.length / ITEMS_PER_PAGE), paymentPage + 1))}
+                                                        disabled={paymentPage >= Math.ceil(transactionStats.payments.details.length / ITEMS_PER_PAGE)}
+                                                        style={{
+                                                            padding: '8px 16px',
+                                                            background: paymentPage >= Math.ceil(transactionStats.payments.details.length / ITEMS_PER_PAGE) ? '#1e293b' : '#667eea',
+                                                            color: paymentPage >= Math.ceil(transactionStats.payments.details.length / ITEMS_PER_PAGE) ? '#64748b' : '#fff',
+                                                            border: '1px solid #334155',
+                                                            borderRadius: '6px',
+                                                            cursor: paymentPage >= Math.ceil(transactionStats.payments.details.length / ITEMS_PER_PAGE) ? 'not-allowed' : 'pointer',
+                                                            fontWeight: '600',
+                                                            fontSize: '0.875rem'
+                                                        }}
+                                                    >
+                                                        Next →
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                    
+                                    <div className="card">
+                                        <div className="card-title">💰 Payouts Overview</div>
+                                        <div className="stats-grid" style={{ marginBottom: '0' }}>
+                                            <div className="stat-card blue">
+                                                <div className="stat-label">Total</div>
+                                                <div className="stat-value">{transactionStats.payouts.total}</div>
+                                            </div>
+                                            <div className="stat-card green">
+                                                <div className="stat-label">Paid</div>
+                                                <div className="stat-value">{transactionStats.payouts.paid}</div>
+                                            </div>
+                                            <div className="stat-card orange">
+                                                <div className="stat-label">Pending</div>
+                                                <div className="stat-value">{transactionStats.payouts.pending}</div>
+                                            </div>
+                                            <div className="stat-card red">
+                                                <div className="stat-label">Failed</div>
+                                                <div className="stat-value">{transactionStats.payouts.failed}</div>
+                                            </div>
+                                            <div className="stat-card blue">
+                                                <div className="stat-label">Amount</div>
+                                                <div className="stat-value" style={{ fontSize: '1.5rem' }}>
+                                                    ${transactionStats.payouts.amount.toLocaleString()}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {transactionStats.payouts.details && transactionStats.payouts.details.length > 0 && (
+                                        <div className="card">
+                                            <div className="card-title">💸 Payout Details</div>
+                                            <div style={{ overflowX: 'auto' }}>
+                                                <table style={{
+                                                    width: '100%',
+                                                    borderCollapse: 'collapse',
+                                                    fontSize: '0.875rem'
+                                                }}>
+                                                    <thead>
+                                                        <tr style={{ borderBottom: '2px solid #334155' }}>
+                                                            <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Amount</th>
+                                                            <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Currency</th>
+                                                            <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Status</th>
+                                                            <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Destination Bank</th>
+                                                            <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Method</th>
+                                                            <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Type</th>
+                                                            <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Arrival Date</th>
+                                                            <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Created</th>
+                                                            <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Description</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {transactionStats.payouts.details
+                                                            .slice((payoutPage - 1) * ITEMS_PER_PAGE, payoutPage * ITEMS_PER_PAGE)
+                                                            .map((payout, idx) => (
+                                                            <tr key={idx} style={{ borderBottom: '1px solid #334155' }}>
+                                                                <td style={{ padding: '12px 8px', color: '#f8fafc' }}>${payout.amount.toFixed(2)}</td>
+                                                                <td style={{ padding: '12px 8px', color: '#94a3b8' }}>{payout.currency}</td>
+                                                                <td style={{ padding: '12px 8px' }}>
+                                                                    <span style={{
+                                                                        padding: '4px 8px',
+                                                                        borderRadius: '4px',
+                                                                        fontSize: '0.75rem',
+                                                                        fontWeight: '600',
+                                                                        background: payout.status === 'paid' ? 'rgba(16, 185, 129, 0.2)' : payout.status === 'pending' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                                                                        color: payout.status === 'paid' ? '#10b981' : payout.status === 'pending' ? '#f59e0b' : '#ef4444'
+                                                                    }}>
+                                                                        {payout.status}
+                                                                    </span>
+                                                                </td>
+                                                                <td style={{ padding: '12px 8px', color: '#94a3b8', fontWeight: '600' }}>{payout.destination}</td>
+                                                                <td style={{ padding: '12px 8px', color: '#94a3b8' }}>{payout.method}</td>
+                                                                <td style={{ padding: '12px 8px', color: '#94a3b8' }}>{payout.type.replace('_', ' ')}</td>
+                                                                <td style={{ padding: '12px 8px', color: '#94a3b8' }}>{payout.arrival_date}</td>
+                                                                <td style={{ padding: '12px 8px', color: '#94a3b8', fontSize: '0.75rem' }}>{payout.created}</td>
+                                                                <td style={{ padding: '12px 8px', color: '#94a3b8' }}>{payout.description}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            
+                                            {transactionStats.payouts.details.length > ITEMS_PER_PAGE && (
+                                                <div style={{ 
+                                                    marginTop: '20px', 
+                                                    display: 'flex', 
+                                                    justifyContent: 'center', 
+                                                    gap: '10px',
+                                                    alignItems: 'center'
+                                                }}>
+                                                    <button
+                                                        onClick={() => setPayoutPage(Math.max(1, payoutPage - 1))}
+                                                        disabled={payoutPage === 1}
+                                                        style={{
+                                                            padding: '8px 16px',
+                                                            background: payoutPage === 1 ? '#1e293b' : '#667eea',
+                                                            color: payoutPage === 1 ? '#64748b' : '#fff',
+                                                            border: '1px solid #334155',
+                                                            borderRadius: '6px',
+                                                            cursor: payoutPage === 1 ? 'not-allowed' : 'pointer',
+                                                            fontWeight: '600',
+                                                            fontSize: '0.875rem'
+                                                        }}
+                                                    >
+                                                        ← Previous
+                                                    </button>
+                                                    <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
+                                                        Page {payoutPage} of {Math.ceil(transactionStats.payouts.details.length / ITEMS_PER_PAGE)}
+                                                    </span>
+                                                    <button
+                                                        onClick={() => setPayoutPage(Math.min(Math.ceil(transactionStats.payouts.details.length / ITEMS_PER_PAGE), payoutPage + 1))}
+                                                        disabled={payoutPage >= Math.ceil(transactionStats.payouts.details.length / ITEMS_PER_PAGE)}
+                                                        style={{
+                                                            padding: '8px 16px',
+                                                            background: payoutPage >= Math.ceil(transactionStats.payouts.details.length / ITEMS_PER_PAGE) ? '#1e293b' : '#667eea',
+                                                            color: payoutPage >= Math.ceil(transactionStats.payouts.details.length / ITEMS_PER_PAGE) ? '#64748b' : '#fff',
+                                                            border: '1px solid #334155',
+                                                            borderRadius: '6px',
+                                                            cursor: payoutPage >= Math.ceil(transactionStats.payouts.details.length / ITEMS_PER_PAGE) ? 'not-allowed' : 'pointer',
+                                                            fontWeight: '600',
+                                                            fontSize: '0.875rem'
+                                                        }}
+                                                    >
+                                                        Next →
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </>
+                    )}
+                    
+                    {/* Refund Modal */}
+                    {console.log('Refund Modal Check:', { showRefundModal, refundModalData })}
+                    {showRefundModal && refundModalData && (
+                        <div onClick={(e) => {
+                            if (e.target === e.currentTarget) closeRefundModal();
+                        }} style={{
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            background: 'rgba(0, 0, 0, 0.7)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 9999,
+                            backdropFilter: 'blur(4px)'
+                        }}>
+                            <div style={{
+                                background: '#1e293b',
+                                border: '2px solid #334155',
+                                borderRadius: '16px',
+                                padding: '30px',
+                                maxWidth: '500px',
+                                width: '90%',
+                                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
+                                animation: 'slideIn 0.3s ease-out'
+                            }}>
+                                {/* Confirm Status */}
+                                {refundModalData.status === 'confirm' && (
+                                    <>
+                                        <div style={{ textAlign: 'center', marginBottom: '25px' }}>
+                                            <div style={{ fontSize: '3rem', marginBottom: '10px' }}>⚠️</div>
+                                            <h2 style={{ color: '#f8fafc', fontSize: '1.5rem', marginBottom: '10px' }}>Confirm Refund</h2>
+                                            <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>This action cannot be undone</p>
+                                        </div>
+                                        
+                                        <div style={{
+                                            background: '#0f172a',
+                                            borderRadius: '12px',
+                                            padding: '20px',
+                                            marginBottom: '25px',
+                                            border: '1px solid #334155'
+                                        }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
+                                                <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Amount:</span>
+                                                <span style={{ color: '#f8fafc', fontWeight: '700', fontSize: '1.25rem' }}>
+                                                    {formatAmount(refundModalData.amount, refundModalData.currency)}
+                                                </span>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
+                                                <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Currency:</span>
+                                                <span style={{ color: '#f8fafc', fontWeight: '600' }}>{refundModalData.currency}</span>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Payment ID:</span>
+                                                <span style={{ 
+                                                    color: '#60a5fa', 
+                                                    fontSize: '0.75rem',
+                                                    fontFamily: 'monospace',
+                                                    wordBreak: 'break-all'
+                                                }}>{refundModalData.paymentIntentId}</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div style={{ display: 'flex', gap: '15px' }}>
+                                            <button
+                                                onClick={closeRefundModal}
+                                                style={{
+                                                    flex: 1,
+                                                    padding: '14px',
+                                                    background: '#334155',
+                                                    color: '#f8fafc',
+                                                    border: 'none',
+                                                    borderRadius: '8px',
+                                                    cursor: 'pointer',
+                                                    fontSize: '0.95rem',
+                                                    fontWeight: '600',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                onMouseEnter={(e) => e.target.style.background = '#475569'}
+                                                onMouseLeave={(e) => e.target.style.background = '#334155'}
+                                            >
+                                                ✕ Cancel
+                                            </button>
+                                            <button
+                                                onClick={processRefund}
+                                                style={{
+                                                    flex: 1,
+                                                    padding: '14px',
+                                                    background: '#dc2626',
+                                                    color: '#fff',
+                                                    border: 'none',
+                                                    borderRadius: '8px',
+                                                    cursor: 'pointer',
+                                                    fontSize: '0.95rem',
+                                                    fontWeight: '600',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                onMouseEnter={(e) => e.target.style.background = '#b91c1c'}
+                                                onMouseLeave={(e) => e.target.style.background = '#dc2626'}
+                                            >
+                                                💸 Confirm Refund
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                                
+                                {/* Processing Status */}
+                                {refundModalData.status === 'processing' && (
+                                    <div style={{ textAlign: 'center', padding: '20px' }}>
+                                        <div className="loading-spinner" style={{ 
+                                            width: '60px', 
+                                            height: '60px', 
+                                            margin: '0 auto 20px',
+                                            borderWidth: '4px'
+                                        }}></div>
+                                        <h2 style={{ color: '#f8fafc', fontSize: '1.5rem', marginBottom: '10px' }}>Processing Refund...</h2>
+                                        <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Please wait while we process your refund</p>
+                                    </div>
+                                )}
+                                
+                                {/* Success Status */}
+                                {refundModalData.status === 'success' && (
+                                    <>
+                                        <div style={{ textAlign: 'center', marginBottom: '25px' }}>
+                                            <div style={{ fontSize: '3rem', marginBottom: '10px' }}>✅</div>
+                                            <h2 style={{ color: '#10b981', fontSize: '1.5rem', marginBottom: '10px' }}>Refund Successful!</h2>
+                                            <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>The payment has been refunded</p>
+                                        </div>
+                                        
+                                        <div style={{
+                                            background: 'rgba(16, 185, 129, 0.1)',
+                                            border: '1px solid rgba(16, 185, 129, 0.3)',
+                                            borderRadius: '12px',
+                                            padding: '20px',
+                                            marginBottom: '25px'
+                                        }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
+                                                <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Refund ID:</span>
+                                                <span style={{ 
+                                                    color: '#10b981', 
+                                                    fontSize: '0.75rem',
+                                                    fontFamily: 'monospace',
+                                                    fontWeight: '600'
+                                                }}>{refundModalData.refundId}</span>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
+                                                <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Amount:</span>
+                                                <span style={{ color: '#10b981', fontWeight: '700', fontSize: '1.25rem' }}>
+                                                    {formatAmount(refundModalData.amount, refundModalData.currency)}
+                                                </span>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Status:</span>
+                                                <span style={{ 
+                                                    color: '#10b981', 
+                                                    fontWeight: '600',
+                                                    textTransform: 'capitalize'
+                                                }}>{refundModalData.refundStatus}</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <button
+                                            onClick={closeRefundModal}
+                                            style={{
+                                                width: '100%',
+                                                padding: '14px',
+                                                background: '#10b981',
+                                                color: '#fff',
+                                                border: 'none',
+                                                borderRadius: '8px',
+                                                cursor: 'pointer',
+                                                fontSize: '0.95rem',
+                                                fontWeight: '600',
+                                                transition: 'all 0.2s'
+                                            }}
+                                            onMouseEnter={(e) => e.target.style.background = '#059669'}
+                                            onMouseLeave={(e) => e.target.style.background = '#10b981'}
+                                        >
+                                            ✓ Done
+                                        </button>
+                                    </>
+                                )}
+                                
+                                {/* Error Status */}
+                                {refundModalData.status === 'error' && (
+                                    <>
+                                        <div style={{ textAlign: 'center', marginBottom: '25px' }}>
+                                            <div style={{ fontSize: '3rem', marginBottom: '10px' }}>❌</div>
+                                            <h2 style={{ color: '#ef4444', fontSize: '1.5rem', marginBottom: '10px' }}>Refund Failed</h2>
+                                            <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Something went wrong</p>
+                                        </div>
+                                        
+                                        <div style={{
+                                            background: 'rgba(239, 68, 68, 0.1)',
+                                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                                            borderRadius: '12px',
+                                            padding: '20px',
+                                            marginBottom: '25px'
+                                        }}>
+                                            <div style={{ color: '#ef4444', fontSize: '0.875rem', lineHeight: '1.6' }}>
+                                                <strong>Error:</strong><br/>
+                                                {refundModalData.errorMessage}
+                                            </div>
+                                        </div>
+                                        
+                                        <button
+                                            onClick={closeRefundModal}
+                                            style={{
+                                                width: '100%',
+                                                padding: '14px',
+                                                background: '#ef4444',
+                                                color: '#fff',
+                                                border: 'none',
+                                                borderRadius: '8px',
+                                                cursor: 'pointer',
+                                                fontSize: '0.95rem',
+                                                fontWeight: '600',
+                                                transition: 'all 0.2s'
+                                            }}
+                                            onMouseEnter={(e) => e.target.style.background = '#dc2626'}
+                                            onMouseLeave={(e) => e.target.style.background = '#ef4444'}
+                                        >
+                                            ✕ Close
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
