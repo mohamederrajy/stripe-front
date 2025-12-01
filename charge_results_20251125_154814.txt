@@ -1,0 +1,29 @@
+Stripe Batch Charging Results
+Date: 2025-11-25 15:48:14
+Mode: LIVE
+Amount: $1.00 USD
+
+Successful: 0
+Failed: 4
+
+Total Charged: $0.00
+
+============================================================
+SUCCESSFUL CHARGES:
+============================================================
+
+============================================================
+FAILED CHARGES:
+============================================================
+skylar jeans - smjeans84@gmail.com - cus_TU2pCUOwC9FndH
+  Error: This Customer doesn't have any legacy saved payment details, but does have a Payment Method attached. Use a Payment Intent instead of creating a Charge: https://stripe.com/docs/payments/payment-intents/migration
+
+Yahia Yakouben - gtlogisticsca@gmail.com - cus_TRjugROrIh8KHr
+  Error: This Customer doesn't have any legacy saved payment details, but does have a Payment Method attached. Use a Payment Intent instead of creating a Charge: https://stripe.com/docs/payments/payment-intents/migration
+
+Derek Taitano - derektaitano51@gmail.com - cus_TRZp9aDciDvgXm
+  Error: This Customer doesn't have any legacy saved payment details, but does have a Payment Method attached. Use a Payment Intent instead of creating a Charge: https://stripe.com/docs/payments/payment-intents/migration
+
+Jian Lin - Jianlin19737373@gmail.com - cus_TR7ScjAAmcfGoj
+  Error: This Customer doesn't have any legacy saved payment details, but does have a Payment Method attached. Use a Payment Intent instead of creating a Charge: https://stripe.com/docs/payments/payment-intents/migration
+

@@ -1,0 +1,27 @@
+Stripe Batch Charging Results
+Date: 2025-11-25 15:56:26
+Mode: LIVE
+Amount: $1.00 USD
+
+Successful: 1
+Failed: 3
+
+Total Charged: $1.00
+
+============================================================
+SUCCESSFUL CHARGES:
+============================================================
+skylar jeans - smjeans84@gmail.com - cus_TU2pCUOwC9FndH
+
+============================================================
+FAILED CHARGES:
+============================================================
+Yahia Yakouben - gtlogisticsca@gmail.com - cus_TRjugROrIh8KHr
+  Error: Your card was declined.
+
+Derek Taitano - derektaitano51@gmail.com - cus_TRZp9aDciDvgXm
+  Error: Your card was declined.
+
+Jian Lin - Jianlin19737373@gmail.com - cus_TR7ScjAAmcfGoj
+  Error: Your card was declined.
+

@@ -1,0 +1,17 @@
+Stripe Batch Charging Results
+Date: 2025-10-18 22:50:20
+Mode: TEST
+Amount: $29.99 USD
+
+Successful: 6
+Failed: 0
+
+============================================================
+SUCCESSFUL CHARGES:
+============================================================
+CARLOS VILLEGAS - nauereskraoj@outlook.com - cus_TDUN96uCVomBSv
+Samantha Burgess - samanthachesters@yahoo.com - cus_TDTA26k1GnYD3Y
+Laureen Fraser - laureenfraser@aol.com - cus_TDQUjieIypyIfz
+David Slight - david.slight@sky.com - cus_TDQ98z34dcaB09
+Viv Shaw - vivien.shaw64.vs@gmail.com - cus_TDQ7vedV8qtqHf
+ALEXANDER LEZCANO - allandasa@proton.me - cus_TDPaJiDZKSB5eD
