@@ -542,6 +542,9 @@
             const [loadingConnectedAccounts, setLoadingConnectedAccounts] = useState(false);
             const [connectedAccountsPage, setConnectedAccountsPage] = useState(1);
             const CONNECTED_ACCOUNTS_PER_PAGE = 10;
+            const [deleteModalData, setDeleteModalData] = useState(null);
+            const [showDeleteModal, setShowDeleteModal] = useState(false);
+            const [isDeleting, setIsDeleting] = useState(false);
             
             // Currency helper function
             const getCurrencySymbol = (currency) => {
@@ -730,6 +733,73 @@
                     });
                 } finally {
                     setLoadingConnectedAccounts(false);
+                }
+            }
+            
+            function handleDeleteAccount(accountId, businessName, email) {
+                console.log('🗑️ Opening delete confirmation for:', accountId);
+                setDeleteModalData({
+                    accountId,
+                    businessName,
+                    email,
+                    status: 'confirm' // confirm, deleting, success, error
+                });
+                setShowDeleteModal(true);
+            }
+            
+            function closeDeleteModal() {
+                setShowDeleteModal(false);
+                setDeleteModalData(null);
+            }
+            
+            async function confirmDeleteAccount() {
+                setIsDeleting(true);
+                setDeleteModalData(prev => ({ ...prev, status: 'deleting' }));
+                
+                try {
+                    console.log(`🗑️ Deleting account: ${deleteModalData.accountId}`);
+                    
+                    const response = await fetch(`${API_URL}/delete-connected-account`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            apiKey, 
+                            accountId: deleteModalData.accountId
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        setDeleteModalData(prev => ({ 
+                            ...prev, 
+                            status: 'success'
+                        }));
+                        
+                        console.log('✅ Account deleted:', deleteModalData.accountId);
+                        
+                        // Reload connected accounts after 1.5 seconds
+                        setTimeout(() => {
+                            getConnectedAccounts();
+                            closeDeleteModal();
+                        }, 1500);
+                    } else {
+                        setDeleteModalData(prev => ({ 
+                            ...prev, 
+                            status: 'error',
+                            errorMessage: data.error
+                        }));
+                        console.error('❌ Delete failed:', data.error);
+                    }
+                } catch (error) {
+                    setDeleteModalData(prev => ({ 
+                        ...prev, 
+                        status: 'error',
+                        errorMessage: error.message
+                    }));
+                    console.error('❌ Delete error:', error);
+                } finally {
+                    setIsDeleting(false);
                 }
             }
             
@@ -1676,6 +1746,7 @@
                                                             <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Payouts Enabled</th>
                                                             <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Account ID</th>
                                                             <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Created</th>
+                                                            <th style={{ padding: '12px 8px', textAlign: 'center', color: '#cbd5e1', fontWeight: '600' }}>Actions</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -1754,6 +1825,26 @@
                                                                         </td>
                                                                         <td style={{ padding: '12px 8px', color: '#94a3b8', fontSize: '0.8rem' }}>
                                                                             {new Date(account.created * 1000).toLocaleDateString()}
+                                                                        </td>
+                                                                        <td style={{ padding: '12px 8px', textAlign: 'center' }}>
+                                                                            <button
+                                                                                onClick={() => handleDeleteAccount(account.id, account.business_name, account.email)}
+                                                                                style={{
+                                                                                    padding: '6px 12px',
+                                                                                    background: '#dc2626',
+                                                                                    color: '#fff',
+                                                                                    border: 'none',
+                                                                                    borderRadius: '6px',
+                                                                                    cursor: 'pointer',
+                                                                                    fontSize: '0.75rem',
+                                                                                    fontWeight: '600',
+                                                                                    transition: 'all 0.2s'
+                                                                                }}
+                                                                                onMouseEnter={(e) => e.target.style.background = '#b91c1c'}
+                                                                                onMouseLeave={(e) => e.target.style.background = '#dc2626'}
+                                                                            >
+                                                                                🗑️ Delete
+                                                                            </button>
                                                                         </td>
                                                                     </tr>
                                                                 );
@@ -3132,6 +3223,240 @@
                                         
                                         <button
                                             onClick={closeRefundModal}
+                                            style={{
+                                                width: '100%',
+                                                padding: '14px',
+                                                background: '#ef4444',
+                                                color: '#fff',
+                                                border: 'none',
+                                                borderRadius: '8px',
+                                                cursor: 'pointer',
+                                                fontSize: '0.95rem',
+                                                fontWeight: '600',
+                                                transition: 'all 0.2s'
+                                            }}
+                                            onMouseEnter={(e) => e.target.style.background = '#dc2626'}
+                                            onMouseLeave={(e) => e.target.style.background = '#ef4444'}
+                                        >
+                                            ✕ Close
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                    
+                    {/* Delete Connected Account Modal */}
+                    {showDeleteModal && deleteModalData && (
+                        <div onClick={(e) => {
+                            if (e.target === e.currentTarget && deleteModalData.status === 'confirm') closeDeleteModal();
+                        }} style={{
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            background: 'rgba(0, 0, 0, 0.7)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 9999,
+                            backdropFilter: 'blur(4px)'
+                        }}>
+                            <div style={{
+                                background: '#1e293b',
+                                border: '2px solid #334155',
+                                borderRadius: '16px',
+                                padding: '30px',
+                                maxWidth: '500px',
+                                width: '90%',
+                                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
+                                animation: 'slideIn 0.3s ease-out'
+                            }}>
+                                {/* Confirm Deletion */}
+                                {deleteModalData.status === 'confirm' && (
+                                    <>
+                                        <div style={{ textAlign: 'center', marginBottom: '25px' }}>
+                                            <div style={{ fontSize: '3rem', marginBottom: '10px' }}>⚠️</div>
+                                            <h2 style={{ color: '#f8fafc', fontSize: '1.5rem', marginBottom: '10px' }}>Delete Connected Account</h2>
+                                            <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>This action cannot be undone</p>
+                                        </div>
+                                        
+                                        <div style={{
+                                            background: '#0f172a',
+                                            borderRadius: '12px',
+                                            padding: '20px',
+                                            marginBottom: '25px',
+                                            border: '1px solid #334155'
+                                        }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
+                                                <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Account Name:</span>
+                                                <span style={{ color: '#f8fafc', fontWeight: '600' }}>
+                                                    {deleteModalData.businessName}
+                                                </span>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
+                                                <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Email:</span>
+                                                <span style={{ color: '#f8fafc', fontSize: '0.875rem' }}>{deleteModalData.email}</span>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Account ID:</span>
+                                                <span style={{ 
+                                                    color: '#60a5fa', 
+                                                    fontSize: '0.75rem',
+                                                    fontFamily: 'monospace',
+                                                    wordBreak: 'break-all'
+                                                }}>{deleteModalData.accountId}</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div style={{ 
+                                            background: 'rgba(239, 68, 68, 0.1)',
+                                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                                            borderRadius: '8px',
+                                            padding: '12px',
+                                            marginBottom: '20px',
+                                            color: '#fca5a5',
+                                            fontSize: '0.875rem'
+                                        }}>
+                                            ⚠️ This will permanently disconnect this account from your Stripe account.
+                                        </div>
+                                        
+                                        <div style={{ display: 'flex', gap: '15px' }}>
+                                            <button
+                                                onClick={closeDeleteModal}
+                                                style={{
+                                                    flex: 1,
+                                                    padding: '14px',
+                                                    background: '#334155',
+                                                    color: '#f8fafc',
+                                                    border: 'none',
+                                                    borderRadius: '8px',
+                                                    cursor: 'pointer',
+                                                    fontSize: '0.95rem',
+                                                    fontWeight: '600',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                                onMouseEnter={(e) => e.target.style.background = '#475569'}
+                                                onMouseLeave={(e) => e.target.style.background = '#334155'}
+                                            >
+                                                ✕ Cancel
+                                            </button>
+                                            <button
+                                                onClick={confirmDeleteAccount}
+                                                disabled={isDeleting}
+                                                style={{
+                                                    flex: 1,
+                                                    padding: '14px',
+                                                    background: isDeleting ? '#9ca3af' : '#dc2626',
+                                                    color: '#fff',
+                                                    border: 'none',
+                                                    borderRadius: '8px',
+                                                    cursor: isDeleting ? 'not-allowed' : 'pointer',
+                                                    fontSize: '0.95rem',
+                                                    fontWeight: '600',
+                                                    transition: 'all 0.2s',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    gap: '8px'
+                                                }}
+                                                onMouseEnter={(e) => !isDeleting && (e.target.style.background = '#b91c1c')}
+                                                onMouseLeave={(e) => !isDeleting && (e.target.style.background = '#dc2626')}
+                                            >
+                                                {isDeleting ? (
+                                                    <>
+                                                        <span>⏳ Deleting...</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <span>🗑️</span>
+                                                        <span>Delete Account</span>
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                                
+                                {/* Deleting Status */}
+                                {deleteModalData.status === 'deleting' && (
+                                    <>
+                                        <div style={{ textAlign: 'center', marginBottom: '25px' }}>
+                                            <div className="loading-spinner" style={{ margin: '0 auto', marginBottom: '15px' }}></div>
+                                            <h2 style={{ color: '#f8fafc', fontSize: '1.5rem', marginBottom: '10px' }}>Disconnecting Account</h2>
+                                            <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Please wait...</p>
+                                        </div>
+                                    </>
+                                )}
+                                
+                                {/* Success Status */}
+                                {deleteModalData.status === 'success' && (
+                                    <>
+                                        <div style={{ textAlign: 'center', marginBottom: '25px' }}>
+                                            <div style={{ fontSize: '3rem', marginBottom: '10px' }}>✅</div>
+                                            <h2 style={{ color: '#10b981', fontSize: '1.5rem', marginBottom: '10px' }}>Account Deleted</h2>
+                                            <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>The connected account has been removed</p>
+                                        </div>
+                                        
+                                        <div style={{
+                                            background: 'rgba(16, 185, 129, 0.1)',
+                                            border: '1px solid rgba(16, 185, 129, 0.3)',
+                                            borderRadius: '12px',
+                                            padding: '20px',
+                                            marginBottom: '25px'
+                                        }}>
+                                            <div style={{ color: '#10b981', fontSize: '0.875rem', lineHeight: '1.6' }}>
+                                                ✓ Account {deleteModalData.accountId} has been successfully disconnected from your Stripe account.
+                                            </div>
+                                        </div>
+                                        
+                                        <button
+                                            onClick={closeDeleteModal}
+                                            style={{
+                                                width: '100%',
+                                                padding: '14px',
+                                                background: '#10b981',
+                                                color: '#fff',
+                                                border: 'none',
+                                                borderRadius: '8px',
+                                                cursor: 'pointer',
+                                                fontSize: '0.95rem',
+                                                fontWeight: '600',
+                                                transition: 'all 0.2s'
+                                            }}
+                                            onMouseEnter={(e) => e.target.style.background = '#059669'}
+                                            onMouseLeave={(e) => e.target.style.background = '#10b981'}
+                                        >
+                                            ✓ Done
+                                        </button>
+                                    </>
+                                )}
+                                
+                                {/* Error Status */}
+                                {deleteModalData.status === 'error' && (
+                                    <>
+                                        <div style={{ textAlign: 'center', marginBottom: '25px' }}>
+                                            <div style={{ fontSize: '3rem', marginBottom: '10px' }}>❌</div>
+                                            <h2 style={{ color: '#ef4444', fontSize: '1.5rem', marginBottom: '10px' }}>Deletion Failed</h2>
+                                            <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Something went wrong</p>
+                                        </div>
+                                        
+                                        <div style={{
+                                            background: 'rgba(239, 68, 68, 0.1)',
+                                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                                            borderRadius: '12px',
+                                            padding: '20px',
+                                            marginBottom: '25px'
+                                        }}>
+                                            <div style={{ color: '#ef4444', fontSize: '0.875rem', lineHeight: '1.6' }}>
+                                                <strong>Error:</strong><br/>
+                                                {deleteModalData.errorMessage}
+                                            </div>
+                                        </div>
+                                        
+                                        <button
+                                            onClick={closeDeleteModal}
                                             style={{
                                                 width: '100%',
                                                 padding: '14px',
