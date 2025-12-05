@@ -538,6 +538,10 @@
             const [isRefunding, setIsRefunding] = useState(false);
             const [refundedPayments, setRefundedPayments] = useState([]);
             const [renderTrigger, setRenderTrigger] = useState(0);
+            const [connectedAccounts, setConnectedAccounts] = useState(null);
+            const [loadingConnectedAccounts, setLoadingConnectedAccounts] = useState(false);
+            const [connectedAccountsPage, setConnectedAccountsPage] = useState(1);
+            const CONNECTED_ACCOUNTS_PER_PAGE = 10;
             
             // Currency helper function
             const getCurrencySymbol = (currency) => {
@@ -650,6 +654,7 @@
                         await getCustomerStats();
                         await getBusinessInfo(); // Load business info
                         await getOverviewData(selectedDateRange); // Load overview with default range
+                        await getConnectedAccounts(); // Load connected accounts
                     } else {
                         setError(data.error || 'Invalid API key');
                     }
@@ -688,6 +693,43 @@
                 } finally {
                     setLoadingBusinessInfo(false);
                     console.log('🏢 Loading finished. businessInfo state:', businessInfo ? 'Set' : 'Not set');
+                }
+            }
+            
+            async function getConnectedAccounts() {
+                try {
+                    setLoadingConnectedAccounts(true);
+                    console.log('🔗 Loading connected accounts...');
+                    
+                    const response = await fetch(`${API_URL}/get-connected-accounts`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ apiKey })
+                    });
+                    
+                    const data = await response.json();
+                    console.log('🔗 Connected accounts response:', data);
+                    
+                    if (data.success) {
+                        setConnectedAccounts(data);
+                        console.log(`✅ Loaded ${data.accounts ? data.accounts.length : 0} connected accounts`);
+                    } else {
+                        console.error('❌ Connected accounts failed:', data.error);
+                        setConnectedAccounts({
+                            success: true,
+                            accounts: [],
+                            total: 0
+                        });
+                    }
+                } catch (error) {
+                    console.error('❌ Error loading connected accounts:', error);
+                    setConnectedAccounts({
+                        success: true,
+                        accounts: [],
+                        total: 0
+                    });
+                } finally {
+                    setLoadingConnectedAccounts(false);
                 }
             }
             
@@ -1592,6 +1634,222 @@
                                             {businessInfo.account_tasks.currently_due.length === 0 && businessInfo.account_tasks.past_due.length === 0 && businessInfo.account_tasks.pending_verification.length === 0 && ' ✅ Your account is fully verified and in good standing!'}
                                         </div>
                                     </div>
+                                </div>
+                            )}
+                            
+                            {/* Connected Accounts Section */}
+                            {loadingConnectedAccounts && (
+                                <div className="card">
+                                    <div className="card-title">🔗 Loading Connected Accounts...</div>
+                                    <div style={{ 
+                                        display: 'flex', 
+                                        alignItems: 'center', 
+                                        justifyContent: 'center',
+                                        padding: '40px',
+                                        gap: '15px'
+                                    }}>
+                                        <div className="loading-spinner"></div>
+                                        <span style={{ color: '#94a3b8' }}>Fetching your connected accounts...</span>
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {connectedAccounts && (
+                                <div className="card">
+                                    <div className="card-title">🔗 Connected Accounts ({connectedAccounts.total || 0})</div>
+                                    
+                                    {connectedAccounts.accounts && connectedAccounts.accounts.length > 0 ? (
+                                        <>
+                                            <div style={{ overflowX: 'auto' }}>
+                                                <table style={{
+                                                    width: '100%',
+                                                    borderCollapse: 'collapse',
+                                                    fontSize: '0.875rem'
+                                                }}>
+                                                    <thead>
+                                                        <tr style={{ borderBottom: '2px solid #334155' }}>
+                                                            <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Account Name</th>
+                                                            <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Status</th>
+                                                            <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Country</th>
+                                                            <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Email</th>
+                                                            <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Charges Enabled</th>
+                                                            <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Payouts Enabled</th>
+                                                            <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Account ID</th>
+                                                            <th style={{ padding: '12px 8px', textAlign: 'left', color: '#cbd5e1', fontWeight: '600' }}>Created</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {(() => {
+                                                            const accounts = connectedAccounts.accounts.slice((connectedAccountsPage - 1) * CONNECTED_ACCOUNTS_PER_PAGE, connectedAccountsPage * CONNECTED_ACCOUNTS_PER_PAGE);
+                                                            return accounts.map((account, idx) => {
+                                                                // Determine status based on requirements
+                                                                let statusColor = '#10b981'; // green
+                                                                let statusText = 'Active';
+                                                                let statusEmoji = '✅';
+                                                                
+                                                                if (account.charges_enabled === false || account.payouts_enabled === false) {
+                                                                    statusColor = '#f59e0b'; // orange
+                                                                    statusText = 'Limited';
+                                                                    statusEmoji = '⚠️';
+                                                                }
+                                                                
+                                                                if (account.requirements && account.requirements.past_due && account.requirements.past_due.length > 0) {
+                                                                    statusColor = '#ef4444'; // red
+                                                                    statusText = 'Verification Needed';
+                                                                    statusEmoji = '🔴';
+                                                                }
+                                                                
+                                                                return (
+                                                                    <tr key={idx} style={{ borderBottom: '1px solid #334155' }}>
+                                                                        <td style={{ padding: '12px 8px', color: '#f8fafc', fontWeight: '600' }}>
+                                                                            {account.business_profile?.name || account.email || 'N/A'}
+                                                                        </td>
+                                                                        <td style={{ padding: '12px 8px' }}>
+                                                                            <span style={{
+                                                                                padding: '4px 8px',
+                                                                                borderRadius: '4px',
+                                                                                fontSize: '0.75rem',
+                                                                                fontWeight: '600',
+                                                                                background: `${statusColor}20`,
+                                                                                color: statusColor,
+                                                                                display: 'inline-flex',
+                                                                                alignItems: 'center',
+                                                                                gap: '4px'
+                                                                            }}>
+                                                                                {statusEmoji} {statusText}
+                                                                            </span>
+                                                                        </td>
+                                                                        <td style={{ padding: '12px 8px', color: '#94a3b8' }}>
+                                                                            {account.country || 'N/A'}
+                                                                        </td>
+                                                                        <td style={{ padding: '12px 8px', color: '#94a3b8', fontSize: '0.8rem' }}>
+                                                                            {account.email || 'N/A'}
+                                                                        </td>
+                                                                        <td style={{ padding: '12px 8px' }}>
+                                                                            <span style={{
+                                                                                padding: '4px 8px',
+                                                                                borderRadius: '4px',
+                                                                                fontSize: '0.75rem',
+                                                                                fontWeight: '600',
+                                                                                background: account.charges_enabled ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                                                                                color: account.charges_enabled ? '#10b981' : '#ef4444'
+                                                                            }}>
+                                                                                {account.charges_enabled ? '✓ Yes' : '✗ No'}
+                                                                            </span>
+                                                                        </td>
+                                                                        <td style={{ padding: '12px 8px' }}>
+                                                                            <span style={{
+                                                                                padding: '4px 8px',
+                                                                                borderRadius: '4px',
+                                                                                fontSize: '0.75rem',
+                                                                                fontWeight: '600',
+                                                                                background: account.payouts_enabled ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                                                                                color: account.payouts_enabled ? '#10b981' : '#ef4444'
+                                                                            }}>
+                                                                                {account.payouts_enabled ? '✓ Yes' : '✗ No'}
+                                                                            </span>
+                                                                        </td>
+                                                                        <td style={{ padding: '12px 8px', color: '#94a3b8', fontSize: '0.7rem', fontFamily: 'monospace' }}>
+                                                                            {account.id}
+                                                                        </td>
+                                                                        <td style={{ padding: '12px 8px', color: '#94a3b8', fontSize: '0.8rem' }}>
+                                                                            {new Date(account.created * 1000).toLocaleDateString()}
+                                                                        </td>
+                                                                    </tr>
+                                                                );
+                                                            });
+                                                        })()}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            
+                                            {connectedAccounts.accounts.length > CONNECTED_ACCOUNTS_PER_PAGE && (
+                                                <div style={{ 
+                                                    marginTop: '20px', 
+                                                    display: 'flex', 
+                                                    justifyContent: 'center', 
+                                                    gap: '10px',
+                                                    alignItems: 'center'
+                                                }}>
+                                                    <button
+                                                        onClick={() => setConnectedAccountsPage(Math.max(1, connectedAccountsPage - 1))}
+                                                        disabled={connectedAccountsPage === 1}
+                                                        style={{
+                                                            padding: '8px 16px',
+                                                            background: connectedAccountsPage === 1 ? '#1e293b' : '#667eea',
+                                                            color: connectedAccountsPage === 1 ? '#64748b' : '#fff',
+                                                            border: '1px solid #334155',
+                                                            borderRadius: '6px',
+                                                            cursor: connectedAccountsPage === 1 ? 'not-allowed' : 'pointer',
+                                                            fontWeight: '600',
+                                                            fontSize: '0.875rem'
+                                                        }}
+                                                    >
+                                                        ← Previous
+                                                    </button>
+                                                    <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
+                                                        Page {connectedAccountsPage} of {Math.ceil(connectedAccounts.accounts.length / CONNECTED_ACCOUNTS_PER_PAGE)}
+                                                    </span>
+                                                    <button
+                                                        onClick={() => setConnectedAccountsPage(Math.min(Math.ceil(connectedAccounts.accounts.length / CONNECTED_ACCOUNTS_PER_PAGE), connectedAccountsPage + 1))}
+                                                        disabled={connectedAccountsPage >= Math.ceil(connectedAccounts.accounts.length / CONNECTED_ACCOUNTS_PER_PAGE)}
+                                                        style={{
+                                                            padding: '8px 16px',
+                                                            background: connectedAccountsPage >= Math.ceil(connectedAccounts.accounts.length / CONNECTED_ACCOUNTS_PER_PAGE) ? '#1e293b' : '#667eea',
+                                                            color: connectedAccountsPage >= Math.ceil(connectedAccounts.accounts.length / CONNECTED_ACCOUNTS_PER_PAGE) ? '#64748b' : '#fff',
+                                                            border: '1px solid #334155',
+                                                            borderRadius: '6px',
+                                                            cursor: connectedAccountsPage >= Math.ceil(connectedAccounts.accounts.length / CONNECTED_ACCOUNTS_PER_PAGE) ? 'not-allowed' : 'pointer',
+                                                            fontWeight: '600',
+                                                            fontSize: '0.875rem'
+                                                        }}
+                                                    >
+                                                        Next →
+                                                    </button>
+                                                </div>
+                                            )}
+                                            
+                                            {/* Status Legend */}
+                                            <div style={{ 
+                                                marginTop: '20px', 
+                                                padding: '15px', 
+                                                background: 'rgba(102, 126, 234, 0.1)',
+                                                borderRadius: '8px',
+                                                border: '1px solid #334155'
+                                            }}>
+                                                <div style={{ color: '#cbd5e1', fontSize: '0.8rem', fontWeight: '600', marginBottom: '10px' }}>
+                                                    📊 Account Status Legend:
+                                                </div>
+                                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px', fontSize: '0.8rem' }}>
+                                                    <div style={{ color: '#10b981', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <span>✅</span> <span><strong>Active:</strong> All features enabled</span>
+                                                    </div>
+                                                    <div style={{ color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <span>⚠️</span> <span><strong>Limited:</strong> Some features restricted</span>
+                                                    </div>
+                                                    <div style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <span>🔴</span> <span><strong>Verification Needed:</strong> Action required</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div style={{ 
+                                            padding: '30px', 
+                                            textAlign: 'center', 
+                                            background: 'rgba(102, 126, 234, 0.1)',
+                                            borderRadius: '8px',
+                                            border: '1px solid #334155'
+                                        }}>
+                                            <div style={{ fontSize: '2rem', marginBottom: '10px' }}>🔗</div>
+                                            <div style={{ color: '#cbd5e1', fontSize: '1rem', fontWeight: '600', marginBottom: '5px' }}>
+                                                No Connected Accounts
+                                            </div>
+                                            <div style={{ color: '#94a3b8', fontSize: '0.9rem' }}>
+                                                You don't have any connected Stripe accounts at this time.
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                             
