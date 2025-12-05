@@ -758,46 +758,62 @@
                 
                 try {
                     console.log(`🗑️ Deleting account: ${deleteModalData.accountId}`);
+                    console.log(`📍 API URL: ${API_URL}`);
+                    console.log(`🔑 API Key: ${apiKey ? 'Present' : 'Missing'}`);
+                    
+                    const requestBody = { 
+                        apiKey, 
+                        accountId: deleteModalData.accountId
+                    };
+                    
+                    console.log('📤 Sending request:', {
+                        url: `${API_URL}/delete-connected-account`,
+                        accountId: deleteModalData.accountId
+                    });
                     
                     const response = await fetch(`${API_URL}/delete-connected-account`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            apiKey, 
-                            accountId: deleteModalData.accountId
-                        })
+                        body: JSON.stringify(requestBody)
                     });
                     
+                    console.log(`📥 Response status: ${response.status}`);
+                    
                     const data = await response.json();
+                    console.log('📥 Response data:', data);
                     
                     if (data.success) {
+                        console.log('✅ Account deleted successfully');
                         setDeleteModalData(prev => ({ 
                             ...prev, 
                             status: 'success'
                         }));
                         
-                        console.log('✅ Account deleted:', deleteModalData.accountId);
-                        
                         // Reload connected accounts after 1.5 seconds
                         setTimeout(() => {
+                            console.log('🔄 Reloading connected accounts...');
                             getConnectedAccounts();
                             closeDeleteModal();
                         }, 1500);
                     } else {
+                        console.error('❌ Delete failed:', data.error);
+                        console.error('❌ Details:', data.details);
+                        
                         setDeleteModalData(prev => ({ 
                             ...prev, 
                             status: 'error',
-                            errorMessage: data.error
+                            errorMessage: data.error || 'Failed to delete account'
                         }));
-                        console.error('❌ Delete failed:', data.error);
                     }
                 } catch (error) {
+                    console.error('❌ Delete error:', error);
+                    console.error('❌ Error message:', error.message);
+                    
                     setDeleteModalData(prev => ({ 
                         ...prev, 
                         status: 'error',
-                        errorMessage: error.message
+                        errorMessage: error.message || 'Network error'
                     }));
-                    console.error('❌ Delete error:', error);
                 } finally {
                     setIsDeleting(false);
                 }
@@ -3310,7 +3326,7 @@
                                             </div>
                                         </div>
                                         
-                                        <div style={{ 
+                                        <div style={{
                                             background: 'rgba(239, 68, 68, 0.1)',
                                             border: '1px solid rgba(239, 68, 68, 0.3)',
                                             borderRadius: '8px',
@@ -3319,7 +3335,10 @@
                                             color: '#fca5a5',
                                             fontSize: '0.875rem'
                                         }}>
-                                            ⚠️ This will permanently disconnect this account from your Stripe account.
+                                            ⚠️ This will permanently disconnect this account from your Stripe account.<br/>
+                                            <span style={{ fontSize: '0.75rem', marginTop: '8px', display: 'block', opacity: 0.8 }}>
+                                                Note: Some accounts can only be removed from Stripe Dashboard.
+                                            </span>
                                         </div>
                                         
                                         <div style={{ display: 'flex', gap: '15px' }}>
