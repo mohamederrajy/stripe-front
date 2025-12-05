@@ -3524,8 +3524,12 @@
                                     <>
                                         <div style={{ textAlign: 'center', marginBottom: '25px' }}>
                                             <div style={{ fontSize: '3rem', marginBottom: '10px' }}>❌</div>
-                                            <h2 style={{ color: '#ef4444', fontSize: '1.5rem', marginBottom: '10px' }}>Deletion Failed</h2>
-                                            <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Something went wrong</p>
+                                            <h2 style={{ color: '#ef4444', fontSize: '1.5rem', marginBottom: '10px' }}>
+                                                {deleteModalData.errorMessage?.includes('permission') ? 'Permission Denied' : 'Deletion Failed'}
+                                            </h2>
+                                            <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
+                                                {deleteModalData.errorMessage?.includes('permission') ? 'API permissions issue' : 'Something went wrong'}
+                                            </p>
                                         </div>
                                         
                                         <div style={{
@@ -3539,6 +3543,27 @@
                                                 <strong>Error:</strong><br/>
                                                 {deleteModalData.errorMessage}
                                             </div>
+                                            
+                                            {deleteModalData.errorMessage?.includes('permission') && (
+                                                <div style={{ 
+                                                    marginTop: '15px', 
+                                                    paddingTop: '15px',
+                                                    borderTop: '1px solid rgba(239, 68, 68, 0.3)',
+                                                    color: '#fca5a5',
+                                                    fontSize: '0.8rem'
+                                                }}>
+                                                    <strong>💡 Solution:</strong><br/>
+                                                    1. Make sure you're using your MAIN account API key<br/>
+                                                    2. Check if the key is restricted (can't delete restricted keys)<br/>
+                                                    3. Or use Stripe Dashboard:<br/>
+                                                    <a href="https://dashboard.stripe.com/connect/accounts" target="_blank" rel="noopener noreferrer" style={{ 
+                                                        color: '#60a5fa',
+                                                        textDecoration: 'underline'
+                                                    }}>
+                                                        Go to Connect Accounts → Remove account
+                                                    </a>
+                                                </div>
+                                            )}
                                         </div>
                                         
                                         <button
