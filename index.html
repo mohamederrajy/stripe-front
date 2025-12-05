@@ -493,7 +493,7 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
         
-        const API_URL = 'http://localhost:5001';
+        const API_URL = 'https://api.stripech.dev';
         
         function App() {
             // Authentication
@@ -545,9 +545,6 @@
             const [deleteModalData, setDeleteModalData] = useState(null);
             const [showDeleteModal, setShowDeleteModal] = useState(false);
             const [isDeleting, setIsDeleting] = useState(false);
-            const [disableModalData, setDisableModalData] = useState(null);
-            const [showDisableModal, setShowDisableModal] = useState(false);
-            const [isDisabling, setIsDisabling] = useState(false);
             
             // Currency helper function
             const getCurrencySymbol = (currency) => {
@@ -778,74 +775,6 @@
             function closeDeleteModal() {
                 setShowDeleteModal(false);
                 setDeleteModalData(null);
-            }
-            
-            function handleDisableAccount(accountId, businessName, email) {
-                console.log('🔒 Opening disable confirmation for:', accountId);
-                setDisableModalData({
-                    accountId,
-                    businessName,
-                    email,
-                    status: 'confirm'
-                });
-                setShowDisableModal(true);
-            }
-            
-            function closeDisableModal() {
-                setShowDisableModal(false);
-                setDisableModalData(null);
-            }
-            
-            async function confirmDisableAccount() {
-                setIsDisabling(true);
-                setDisableModalData(prev => ({ ...prev, status: 'disabling' }));
-                
-                try {
-                    console.log(`🔒 Disabling account: ${disableModalData.accountId}`);
-                    
-                    const response = await fetch(`${API_URL}/disable-connected-account`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            apiKey, 
-                            accountId: disableModalData.accountId
-                        })
-                    });
-                    
-                    const data = await response.json();
-                    console.log('🔒 Disable response:', data);
-                    
-                    if (data.success) {
-                        setDisableModalData(prev => ({ 
-                            ...prev, 
-                            status: 'success'
-                        }));
-                        
-                        console.log('✅ Account disabled:', disableModalData.accountId);
-                        
-                        // Reload connected accounts after 1.5 seconds
-                        setTimeout(() => {
-                            getConnectedAccounts();
-                            closeDisableModal();
-                        }, 1500);
-                    } else {
-                        setDisableModalData(prev => ({ 
-                            ...prev, 
-                            status: 'error',
-                            errorMessage: data.error
-                        }));
-                        console.error('❌ Disable failed:', data.error);
-                    }
-                } catch (error) {
-                    setDisableModalData(prev => ({ 
-                        ...prev, 
-                        status: 'error',
-                        errorMessage: error.message
-                    }));
-                    console.error('❌ Disable error:', error);
-                } finally {
-                    setIsDisabling(false);
-                }
             }
             
             async function confirmDeleteAccount() {
@@ -1939,46 +1868,24 @@
                                                                             {new Date(account.created * 1000).toLocaleDateString()}
                                                                         </td>
                                                                         <td style={{ padding: '12px 8px', textAlign: 'center' }}>
-                                                                            <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
-                                                                                <button
-                                                                                    onClick={() => handleDisableAccount(account.id, account.business_name, account.email)}
-                                                                                    style={{
-                                                                                        padding: '6px 12px',
-                                                                                        background: '#f59e0b',
-                                                                                        color: '#fff',
-                                                                                        border: 'none',
-                                                                                        borderRadius: '6px',
-                                                                                        cursor: 'pointer',
-                                                                                        fontSize: '0.75rem',
-                                                                                        fontWeight: '600',
-                                                                                        transition: 'all 0.2s'
-                                                                                    }}
-                                                                                    onMouseEnter={(e) => e.target.style.background = '#d97706'}
-                                                                                    onMouseLeave={(e) => e.target.style.background = '#f59e0b'}
-                                                                                    title="Disable charges and payouts for this account"
-                                                                                >
-                                                                                    🔒 Disable
-                                                                                </button>
-                                                                                <button
-                                                                                    onClick={() => handleDeleteAccount(account.id, account.business_name, account.email)}
-                                                                                    style={{
-                                                                                        padding: '6px 12px',
-                                                                                        background: '#dc2626',
-                                                                                        color: '#fff',
-                                                                                        border: 'none',
-                                                                                        borderRadius: '6px',
-                                                                                        cursor: 'pointer',
-                                                                                        fontSize: '0.75rem',
-                                                                                        fontWeight: '600',
-                                                                                        transition: 'all 0.2s'
-                                                                                    }}
-                                                                                    onMouseEnter={(e) => e.target.style.background = '#b91c1c'}
-                                                                                    onMouseLeave={(e) => e.target.style.background = '#dc2626'}
-                                                                                    title="Remove account from your connected accounts"
-                                                                                >
-                                                                                    🗑️ Delete
-                                                                                </button>
-                                                                            </div>
+                                                                            <button
+                                                                                onClick={() => handleDeleteAccount(account.id, account.business_name, account.email)}
+                                                                                style={{
+                                                                                    padding: '6px 12px',
+                                                                                    background: '#f59e0b',
+                                                                                    color: '#fff',
+                                                                                    border: 'none',
+                                                                                    borderRadius: '6px',
+                                                                                    cursor: 'pointer',
+                                                                                    fontSize: '0.75rem',
+                                                                                    fontWeight: '600',
+                                                                                    transition: 'all 0.2s'
+                                                                                }}
+                                                                                onMouseEnter={(e) => e.target.style.background = '#d97706'}
+                                                                                onMouseLeave={(e) => e.target.style.background = '#f59e0b'}
+                                                                            >
+                                                                                🔒 Disable
+                                                                            </button>
                                                                         </td>
                                                                     </tr>
                                                                 );
@@ -3380,246 +3287,6 @@
                         </div>
                     )}
                     
-                    {/* Disable Connected Account Modal */}
-                    {showDisableModal && disableModalData && (
-                        <div onClick={(e) => {
-                            if (e.target === e.currentTarget && disableModalData.status === 'confirm') closeDisableModal();
-                        }} style={{
-                            position: 'fixed',
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            background: 'rgba(0, 0, 0, 0.7)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            zIndex: 9999,
-                            backdropFilter: 'blur(4px)'
-                        }}>
-                            <div style={{
-                                background: '#1e293b',
-                                border: '2px solid #334155',
-                                borderRadius: '16px',
-                                padding: '30px',
-                                maxWidth: '500px',
-                                width: '90%',
-                                boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
-                                animation: 'slideIn 0.3s ease-out'
-                            }}>
-                                {/* Confirm Disable */}
-                                {disableModalData.status === 'confirm' && (
-                                    <>
-                                        <div style={{ textAlign: 'center', marginBottom: '25px' }}>
-                                            <div style={{ fontSize: '3rem', marginBottom: '10px' }}>🔒</div>
-                                            <h2 style={{ color: '#f8fafc', fontSize: '1.5rem', marginBottom: '10px' }}>Disable Account</h2>
-                                            <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Turn off charges and payouts</p>
-                                        </div>
-                                        
-                                        <div style={{
-                                            background: '#0f172a',
-                                            borderRadius: '12px',
-                                            padding: '20px',
-                                            marginBottom: '25px',
-                                            border: '1px solid #334155'
-                                        }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
-                                                <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Account Name:</span>
-                                                <span style={{ color: '#f8fafc', fontWeight: '600' }}>
-                                                    {disableModalData.businessName}
-                                                </span>
-                                            </div>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
-                                                <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Email:</span>
-                                                <span style={{ color: '#f8fafc', fontSize: '0.875rem' }}>{disableModalData.email}</span>
-                                            </div>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Account ID:</span>
-                                                <span style={{ 
-                                                    color: '#60a5fa', 
-                                                    fontSize: '0.75rem',
-                                                    fontFamily: 'monospace',
-                                                    wordBreak: 'break-all'
-                                                }}>{disableModalData.accountId}</span>
-                                            </div>
-                                        </div>
-                                        
-                                        <div style={{ 
-                                            background: 'rgba(245, 158, 11, 0.1)',
-                                            border: '1px solid rgba(245, 158, 11, 0.3)',
-                                            borderRadius: '8px',
-                                            padding: '12px',
-                                            marginBottom: '20px',
-                                            color: '#fdba74',
-                                            fontSize: '0.875rem'
-                                        }}>
-                                            🔒 This will disable charges and payouts for this account.<br/>
-                                            <span style={{ fontSize: '0.75rem', marginTop: '8px', display: 'block', opacity: 0.8 }}>
-                                                The account will remain in your list but won't be able to charge customers.
-                                            </span>
-                                        </div>
-                                        
-                                        <div style={{ display: 'flex', gap: '15px' }}>
-                                            <button
-                                                onClick={closeDisableModal}
-                                                style={{
-                                                    flex: 1,
-                                                    padding: '14px',
-                                                    background: '#334155',
-                                                    color: '#f8fafc',
-                                                    border: 'none',
-                                                    borderRadius: '8px',
-                                                    cursor: 'pointer',
-                                                    fontSize: '0.95rem',
-                                                    fontWeight: '600',
-                                                    transition: 'all 0.2s'
-                                                }}
-                                                onMouseEnter={(e) => e.target.style.background = '#475569'}
-                                                onMouseLeave={(e) => e.target.style.background = '#334155'}
-                                            >
-                                                ✕ Cancel
-                                            </button>
-                                            <button
-                                                onClick={confirmDisableAccount}
-                                                disabled={isDisabling}
-                                                style={{
-                                                    flex: 1,
-                                                    padding: '14px',
-                                                    background: isDisabling ? '#9ca3af' : '#f59e0b',
-                                                    color: '#fff',
-                                                    border: 'none',
-                                                    borderRadius: '8px',
-                                                    cursor: isDisabling ? 'not-allowed' : 'pointer',
-                                                    fontSize: '0.95rem',
-                                                    fontWeight: '600',
-                                                    transition: 'all 0.2s',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    gap: '8px'
-                                                }}
-                                                onMouseEnter={(e) => !isDisabling && (e.target.style.background = '#d97706')}
-                                                onMouseLeave={(e) => !isDisabling && (e.target.style.background = '#f59e0b')}
-                                            >
-                                                {isDisabling ? (
-                                                    <>
-                                                        <span>⏳ Disabling...</span>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <span>🔒</span>
-                                                        <span>Disable Account</span>
-                                                    </>
-                                                )}
-                                            </button>
-                                        </div>
-                                    </>
-                                )}
-                                
-                                {/* Disabling Status */}
-                                {disableModalData.status === 'disabling' && (
-                                    <>
-                                        <div style={{ textAlign: 'center', marginBottom: '25px' }}>
-                                            <div className="loading-spinner" style={{ margin: '0 auto', marginBottom: '15px' }}></div>
-                                            <h2 style={{ color: '#f8fafc', fontSize: '1.5rem', marginBottom: '10px' }}>Disabling Account</h2>
-                                            <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Please wait...</p>
-                                        </div>
-                                    </>
-                                )}
-                                
-                                {/* Success Status */}
-                                {disableModalData.status === 'success' && (
-                                    <>
-                                        <div style={{ textAlign: 'center', marginBottom: '25px' }}>
-                                            <div style={{ fontSize: '3rem', marginBottom: '10px' }}>✅</div>
-                                            <h2 style={{ color: '#10b981', fontSize: '1.5rem', marginBottom: '10px' }}>Account Disabled</h2>
-                                            <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Charges and payouts have been turned off</p>
-                                        </div>
-                                        
-                                        <div style={{
-                                            background: 'rgba(16, 185, 129, 0.1)',
-                                            border: '1px solid rgba(16, 185, 129, 0.3)',
-                                            borderRadius: '12px',
-                                            padding: '20px',
-                                            marginBottom: '25px'
-                                        }}>
-                                            <div style={{ color: '#10b981', fontSize: '0.875rem', lineHeight: '1.6' }}>
-                                                ✓ Account {disableModalData.accountId} has been successfully disabled.<br/>
-                                                <span style={{ fontSize: '0.75rem', marginTop: '8px', display: 'block', opacity: 0.8 }}>
-                                                    No charges can be processed through this account now.
-                                                </span>
-                                            </div>
-                                        </div>
-                                        
-                                        <button
-                                            onClick={closeDisableModal}
-                                            style={{
-                                                width: '100%',
-                                                padding: '14px',
-                                                background: '#10b981',
-                                                color: '#fff',
-                                                border: 'none',
-                                                borderRadius: '8px',
-                                                cursor: 'pointer',
-                                                fontSize: '0.95rem',
-                                                fontWeight: '600',
-                                                transition: 'all 0.2s'
-                                            }}
-                                            onMouseEnter={(e) => e.target.style.background = '#059669'}
-                                            onMouseLeave={(e) => e.target.style.background = '#10b981'}
-                                        >
-                                            ✓ Done
-                                        </button>
-                                    </>
-                                )}
-                                
-                                {/* Error Status */}
-                                {disableModalData.status === 'error' && (
-                                    <>
-                                        <div style={{ textAlign: 'center', marginBottom: '25px' }}>
-                                            <div style={{ fontSize: '3rem', marginBottom: '10px' }}>❌</div>
-                                            <h2 style={{ color: '#ef4444', fontSize: '1.5rem', marginBottom: '10px' }}>Disable Failed</h2>
-                                            <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Something went wrong</p>
-                                        </div>
-                                        
-                                        <div style={{
-                                            background: 'rgba(239, 68, 68, 0.1)',
-                                            border: '1px solid rgba(239, 68, 68, 0.3)',
-                                            borderRadius: '12px',
-                                            padding: '20px',
-                                            marginBottom: '25px'
-                                        }}>
-                                            <div style={{ color: '#ef4444', fontSize: '0.875rem', lineHeight: '1.6' }}>
-                                                <strong>Error:</strong><br/>
-                                                {disableModalData.errorMessage}
-                                            </div>
-                                        </div>
-                                        
-                                        <button
-                                            onClick={closeDisableModal}
-                                            style={{
-                                                width: '100%',
-                                                padding: '14px',
-                                                background: '#ef4444',
-                                                color: '#fff',
-                                                border: 'none',
-                                                borderRadius: '8px',
-                                                cursor: 'pointer',
-                                                fontSize: '0.95rem',
-                                                fontWeight: '600',
-                                                transition: 'all 0.2s'
-                                            }}
-                                            onMouseEnter={(e) => e.target.style.background = '#dc2626'}
-                                            onMouseLeave={(e) => e.target.style.background = '#ef4444'}
-                                        >
-                                            ✕ Close
-                                        </button>
-                                    </>
-                                )}
-                            </div>
-                        </div>
-                    )}
-                    
                     {/* Delete Connected Account Modal */}
                     {showDeleteModal && deleteModalData && (
                         <div onClick={(e) => {
@@ -3647,13 +3314,13 @@
                                 boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
                                 animation: 'slideIn 0.3s ease-out'
                             }}>
-                                {/* Confirm Deletion */}
+                                {/* Confirm Disable */}
                                 {deleteModalData.status === 'confirm' && (
                                     <>
                                         <div style={{ textAlign: 'center', marginBottom: '25px' }}>
-                                            <div style={{ fontSize: '3rem', marginBottom: '10px' }}>⚠️</div>
-                                            <h2 style={{ color: '#f8fafc', fontSize: '1.5rem', marginBottom: '10px' }}>Delete Connected Account</h2>
-                                            <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>This action cannot be undone</p>
+                                            <div style={{ fontSize: '3rem', marginBottom: '10px' }}>🔒</div>
+                                            <h2 style={{ color: '#f8fafc', fontSize: '1.5rem', marginBottom: '10px' }}>Disable Connected Account</h2>
+                                            <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>This will disconnect the account</p>
                                         </div>
                                         
                                         <div style={{
@@ -3727,18 +3394,18 @@
                                         </div>
                                         
                                         <div style={{
-                                            background: 'rgba(239, 68, 68, 0.1)',
-                                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                                            background: 'rgba(245, 158, 11, 0.1)',
+                                            border: '1px solid rgba(245, 158, 11, 0.3)',
                                             borderRadius: '8px',
                                             padding: '12px',
                                             marginBottom: '20px',
-                                            color: '#fca5a5',
+                                            color: '#fdba74',
                                             fontSize: '0.875rem'
                                         }}>
-                                            ⚠️ This will permanently disconnect this account from your Stripe account.<br/>
-                                            <span style={{ fontSize: '0.75rem', marginTop: '8px', display: 'block', opacity: 0.8 }}>
-                                                Note: Some accounts can only be removed from Stripe Dashboard.
-                                            </span>
+                                            🔒 This will disable the account:<br/>
+                                            • No charges can be made<br/>
+                                            • No payouts can happen<br/>
+                                            • Account becomes inactive
                                         </div>
                                         
                                         <div style={{ display: 'flex', gap: '15px' }}>
@@ -3767,7 +3434,7 @@
                                                 style={{
                                                     flex: 1,
                                                     padding: '14px',
-                                                    background: isDeleting ? '#9ca3af' : '#dc2626',
+                                                    background: isDeleting ? '#9ca3af' : '#f59e0b',
                                                     color: '#fff',
                                                     border: 'none',
                                                     borderRadius: '8px',
@@ -3780,17 +3447,17 @@
                                                     justifyContent: 'center',
                                                     gap: '8px'
                                                 }}
-                                                onMouseEnter={(e) => !isDeleting && (e.target.style.background = '#b91c1c')}
-                                                onMouseLeave={(e) => !isDeleting && (e.target.style.background = '#dc2626')}
+                                                onMouseEnter={(e) => !isDeleting && (e.target.style.background = '#d97706')}
+                                                onMouseLeave={(e) => !isDeleting && (e.target.style.background = '#f59e0b')}
                                             >
                                                 {isDeleting ? (
                                                     <>
-                                                        <span>⏳ Deleting...</span>
+                                                        <span>⏳ Disabling...</span>
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <span>🗑️</span>
-                                                        <span>Delete Account</span>
+                                                        <span>🔒</span>
+                                                        <span>Disable Account</span>
                                                     </>
                                                 )}
                                             </button>
@@ -3814,8 +3481,8 @@
                                     <>
                                         <div style={{ textAlign: 'center', marginBottom: '25px' }}>
                                             <div style={{ fontSize: '3rem', marginBottom: '10px' }}>✅</div>
-                                            <h2 style={{ color: '#10b981', fontSize: '1.5rem', marginBottom: '10px' }}>Account Deleted</h2>
-                                            <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>The connected account has been removed</p>
+                                            <h2 style={{ color: '#10b981', fontSize: '1.5rem', marginBottom: '10px' }}>Account Disabled</h2>
+                                            <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>The connected account has been disconnected</p>
                                         </div>
                                         
                                         <div style={{
@@ -3826,7 +3493,10 @@
                                             marginBottom: '25px'
                                         }}>
                                             <div style={{ color: '#10b981', fontSize: '0.875rem', lineHeight: '1.6' }}>
-                                                ✓ Account {deleteModalData.accountId} has been successfully disconnected from your Stripe account.
+                                                ✓ Account {deleteModalData.accountId} has been successfully disabled.<br/>
+                                                <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>
+                                                    No charges or payouts can occur through this account anymore.
+                                                </span>
                                             </div>
                                         </div>
                                         
