@@ -736,14 +736,39 @@
                 }
             }
             
-            function handleDeleteAccount(accountId, businessName, email) {
+            async function handleDeleteAccount(accountId, businessName, email) {
                 console.log('🗑️ Opening delete confirmation for:', accountId);
-                setDeleteModalData({
-                    accountId,
-                    businessName,
-                    email,
-                    status: 'confirm' // confirm, deleting, success, error
-                });
+                
+                // First, check if account is deletable
+                console.log('🔍 Checking account deletability...');
+                try {
+                    const response = await fetch(`${API_URL}/check-account-deletable`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ apiKey, accountId })
+                    });
+                    
+                    const data = await response.json();
+                    console.log('🔍 Account check result:', data);
+                    
+                    setDeleteModalData({
+                        accountId,
+                        businessName,
+                        email,
+                        status: 'confirm',
+                        accountInfo: data.data
+                    });
+                } catch (error) {
+                    console.error('❌ Error checking account:', error);
+                    setDeleteModalData({
+                        accountId,
+                        businessName,
+                        email,
+                        status: 'confirm',
+                        accountInfo: null
+                    });
+                }
+                
                 setShowDeleteModal(true);
             }
             
@@ -3315,7 +3340,7 @@
                                                 <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Email:</span>
                                                 <span style={{ color: '#f8fafc', fontSize: '0.875rem' }}>{deleteModalData.email}</span>
                                             </div>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
                                                 <span style={{ color: '#94a3b8', fontSize: '0.875rem' }}>Account ID:</span>
                                                 <span style={{ 
                                                     color: '#60a5fa', 
@@ -3324,6 +3349,48 @@
                                                     wordBreak: 'break-all'
                                                 }}>{deleteModalData.accountId}</span>
                                             </div>
+                                            
+                                            {deleteModalData.accountInfo && (
+                                                <>
+                                                    <div style={{ borderTop: '1px solid #334155', paddingTop: '15px', marginTop: '15px' }}>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                                            <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>Type:</span>
+                                                            <span style={{ color: '#f8fafc', fontSize: '0.8rem' }}>{deleteModalData.accountInfo.account_type}</span>
+                                                        </div>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                                            <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>Balance:</span>
+                                                            <span style={{ color: '#f8fafc', fontSize: '0.8rem' }}>${deleteModalData.accountInfo.total_balance_dollars.toFixed(2)}</span>
+                                                        </div>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                                            <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>Status:</span>
+                                                            <span style={{ 
+                                                                color: deleteModalData.accountInfo.is_deletable ? '#10b981' : '#ef4444',
+                                                                fontSize: '0.8rem',
+                                                                fontWeight: '600'
+                                                            }}>
+                                                                {deleteModalData.accountInfo.is_deletable ? '✅ Ready to delete' : '⚠️ Issues found'}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    {deleteModalData.accountInfo.issues && deleteModalData.accountInfo.issues.length > 0 && (
+                                                        <div style={{ 
+                                                            background: 'rgba(239, 68, 68, 0.1)',
+                                                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                                                            borderRadius: '6px',
+                                                            padding: '10px',
+                                                            marginTop: '10px'
+                                                        }}>
+                                                            <div style={{ color: '#fca5a5', fontSize: '0.75rem', fontWeight: '600', marginBottom: '5px' }}>Issues:</div>
+                                                            {deleteModalData.accountInfo.issues.map((issue, idx) => (
+                                                                <div key={idx} style={{ color: '#fca5a5', fontSize: '0.75rem', marginBottom: '3px' }}>
+                                                                    • {issue}
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </>
+                                            )}
                                         </div>
                                         
                                         <div style={{
