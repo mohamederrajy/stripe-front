@@ -472,7 +472,103 @@
             gap: 20px;
         }
         
+        /* Notifications */
+        .notification-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 400px;
+        }
+        
+        .notification {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            background: #1e293b;
+            border: 2px solid;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: slideInRight 0.4s ease-out;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+        
+        .notification.success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border-color: #34d399;
+            color: #fff;
+        }
+        
+        .notification.error {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            border-color: #fca5a5;
+            color: #fff;
+        }
+        
+        .notification.info {
+            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+            border-color: #60a5fa;
+            color: #fff;
+        }
+        
+        .notification-icon {
+            font-size: 1.3rem;
+            flex-shrink: 0;
+        }
+        
+        .notification-message {
+            flex: 1;
+            line-height: 1.4;
+        }
+        
+        .notification-stripe-logo {
+            width: 32px;
+            height: 32px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(400px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+        }
+        
+        @keyframes slideOutRight {
+            from {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(400px) scale(0.9);
+            }
+        }
+        
+        .notification.exit {
+            animation: slideOutRight 0.3s ease-in forwards;
+        }
+        
         @media (max-width: 768px) {
+            .notification-container {
+                right: 10px;
+                left: 10px;
+                max-width: none;
+                top: 10px;
+            }
+            
             .layout {
                 grid-template-columns: 1fr;
             }
@@ -542,6 +638,7 @@
             const [loadingConnectedAccounts, setLoadingConnectedAccounts] = useState(false);
             const [connectedAccountsPage, setConnectedAccountsPage] = useState(1);
             const CONNECTED_ACCOUNTS_PER_PAGE = 10;
+            const [notifications, setNotifications] = useState([]);
             
             // Currency helper function
             const getCurrencySymbol = (currency) => {
@@ -584,6 +681,63 @@
                 const symbol = getCurrencySymbol(currency);
                 return `${symbol}${amount.toLocaleString()}`;
             };
+            
+            // 🔔 Notification function with sound
+            function showNotification(message, type = 'success', duration = 4000) {
+                const id = Date.now();
+                const notification = {
+                    id,
+                    message,
+                    type // 'success', 'error', 'info'
+                };
+                
+                setNotifications(prev => [...prev, notification]);
+                
+                // Play success sound
+                if (type === 'success') {
+                    playSuccessSound();
+                }
+                
+                // Auto-remove notification after duration
+                setTimeout(() => {
+                    setNotifications(prev => prev.filter(n => n.id !== id));
+                }, duration);
+            }
+            
+            // 🔊 Play success sound (using Web Audio API)
+            function playSuccessSound() {
+                try {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    
+                    // Create success "ding" sound
+                    const now = audioContext.currentTime;
+                    
+                    // High note
+                    const osc1 = audioContext.createOscillator();
+                    const gain1 = audioContext.createGain();
+                    osc1.connect(gain1);
+                    gain1.connect(audioContext.destination);
+                    osc1.frequency.value = 800;
+                    gain1.gain.setValueAtTime(0.3, now);
+                    gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                    osc1.start(now);
+                    osc1.stop(now + 0.15);
+                    
+                    // Higher note
+                    const osc2 = audioContext.createOscillator();
+                    const gain2 = audioContext.createGain();
+                    osc2.connect(gain2);
+                    gain2.connect(audioContext.destination);
+                    osc2.frequency.value = 1200;
+                    gain2.gain.setValueAtTime(0.2, now + 0.05);
+                    gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                    osc2.start(now + 0.05);
+                    osc2.stop(now + 0.25);
+                } catch (e) {
+                    console.log('Could not play sound:', e);
+                }
+            }
+            
             const [chargeResults, setChargeResults] = useState(null);
             const [error, setError] = useState('');
             
@@ -1063,6 +1217,22 @@
                                             failed: eventData.failed,
                                             charges: [...prev.charges, eventData.charge]
                                         }));
+                                        
+                                        // Show notification for each completed charge
+                                        if (eventData.charge.status === 'success') {
+                                            showNotification(
+                                                `✅ ${eventData.charge.customer.name} - $${eventData.charge.amount.toFixed(2)} ${eventData.charge.currency}`,
+                                                'success',
+                                                3000
+                                            );
+                                        } else {
+                                            showNotification(
+                                                `❌ ${eventData.charge.customer.name} - ${eventData.charge.error}`,
+                                                'error',
+                                                4000
+                                            );
+                                        }
+                                        
                                         console.log(`📊 Charge completed: ${eventData.charge.customer.name} - ${eventData.charge.status}`);
                                         setProcessedCustomers(eventData.successful + eventData.failed);
                                     }
@@ -1085,6 +1255,27 @@
                     setIsCharging(false);
                     setIsPaused(false);
                 }
+            }
+            
+            // Notification Component
+            function NotificationContainer() {
+                return (
+                    <div className="notification-container">
+                        {notifications.map((notif) => (
+                            <div key={notif.id} className={`notification ${notif.type}`}>
+                                <div className="notification-stripe-logo">
+                                    <svg width="24" height="24" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <rect width="28" height="28" rx="6" fill="white"/>
+                                        <path d="M13.3 13.2c0-.7.6-1 1.6-1 1.4 0 3.2.4 4.6 1.2V9.7c-1.5-.6-3-1-4.6-1-3.8 0-6.3 2-6.3 5.2 0 5.1 7 4.3 7 6.5 0 .8-.7 1.1-1.7 1.1-1.5 0-3.4-.6-4.9-1.4v3.7c1.7.7 3.4 1 4.9 1 3.9 0 6.5-1.9 6.5-5.2-.1-5.5-7.1-4.5-7.1-6.4z" fill="#635BFF"/>
+                                    </svg>
+                                </div>
+                                <div className="notification-message">
+                                    {notif.message}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                );
             }
             
             // Show login page if not authenticated
@@ -1151,7 +1342,9 @@
             
             // Show dashboard if authenticated
             return (
-                <div className="container">
+                <>
+                    <NotificationContainer />
+                    <div className="container">
                     <div className="header">
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '10px' }}>
                             <svg className="stripe-logo" width="42" height="42" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -3194,6 +3387,7 @@
                     )}
                     
                 </div>
+                </>
             );
         }
 
