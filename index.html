@@ -1119,6 +1119,7 @@
                 setChargingAborted(true);
                 setIsPaused(false);
                 setIsCharging(false);
+                showNotification('🛑 Charging stopped by user', 'info', 2000);
                 console.log('🛑 Charging stopped');
             }
             
@@ -1167,6 +1168,8 @@
                 // Get only selected customers
                 const customersToCharge = chargeableCustomers.filter(c => selectedCustomers.includes(c.id));
                 
+                let abortController = new AbortController();
+                
                 try {
                     const response = await fetch(`${API_URL}/charge`, {
                         method: 'POST',
@@ -1180,7 +1183,8 @@
                             delay: parseFloat(delay),
                             customers: customersToCharge,  // Pass only selected customers
                             skipSpecialPayments: true
-                        })
+                        }),
+                        signal: abortController.signal
                     });
                     
                     console.log(`⚡️ Charging ${customersToCharge.length} selected customers (out of ${chargeableCustomers.length} chargeable)`);
@@ -1191,6 +1195,12 @@
                     let buffer = '';
                     
                     while (true) {
+                        if (chargingAborted) {
+                            reader.cancel();
+                            abortController.abort();
+                            break;
+                        }
+                        
                         const { done, value } = await reader.read();
                         
                         if (done) break;
@@ -1218,18 +1228,12 @@
                                             charges: [...prev.charges, eventData.charge]
                                         }));
                                         
-                                        // Show notification for each completed charge
+                                        // Show notification only for successful charges with sound
                                         if (eventData.charge.status === 'success') {
                                             showNotification(
                                                 `✅ ${eventData.charge.customer.name} - $${eventData.charge.amount.toFixed(2)} ${eventData.charge.currency}`,
                                                 'success',
                                                 3000
-                                            );
-                                        } else {
-                                            showNotification(
-                                                `❌ ${eventData.charge.customer.name} - ${eventData.charge.error}`,
-                                                'error',
-                                                4000
                                             );
                                         }
                                         
@@ -1247,7 +1251,7 @@
                     }
                 } catch (error) {
                     if (chargingAborted) {
-                        setError('Charging stopped by user');
+                        console.log('✅ Charging stopped by user');
                     } else {
                         setError('Failed: ' + error.message);
                     }
@@ -2353,7 +2357,7 @@
                                         </div>
                                     )}
                                     
-                                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
                                         {!isCharging ? (
                                             <button 
                                                 className="btn btn-danger"
@@ -2365,66 +2369,41 @@
                                             </button>
                                         ) : (
                                             <>
-                                                {!isPaused ? (
-                                                    <button 
-                                                        className="btn"
-                                                        onClick={pauseCharging}
-                                                        style={{ 
-                                                            flex: 1, 
-                                                            minWidth: '150px',
-                                                            background: '#fb923c',
-                                                            color: '#fff'
-                                                        }}
-                                                    >
-                                                        ⏸️ Pause
-                                                    </button>
-                                                ) : (
-                                                    <button 
-                                                        className="btn"
-                                                        onClick={resumeCharging}
-                                                        style={{ 
-                                                            flex: 1, 
-                                                            minWidth: '150px',
-                                                            background: '#10b981',
-                                                            color: '#fff'
-                                                        }}
-                                                    >
-                                                        ▶️ Resume
-                                                    </button>
-                                                )}
-                                                
-                                                <button 
-                                                    className="btn"
-                                                    onClick={stopCharging}
-                                                    style={{ 
-                                                        flex: 1, 
-                                                        minWidth: '150px',
-                                                        background: '#ef4444',
-                                                        color: '#fff'
-                                                    }}
-                                                >
-                                                    🛑 Stop
-                                                </button>
-                                                
                                                 <div style={{ 
                                                     flex: 1, 
                                                     minWidth: '200px',
                                                     display: 'flex', 
                                                     alignItems: 'center', 
                                                     justifyContent: 'center',
-                                                    padding: '10px',
-                                                    background: isPaused ? 'rgba(251, 146, 60, 0.1)' : 'rgba(102, 126, 234, 0.1)',
+                                                    padding: '12px',
+                                                    background: 'rgba(102, 126, 234, 0.15)',
                                                     borderRadius: '8px',
-                                                    border: isPaused ? '2px solid #fb923c' : '2px solid #667eea'
+                                                    border: '2px solid #667eea'
                                                 }}>
                                                     <div className="spinner" style={{ marginRight: '10px' }}></div>
                                                     <span style={{ 
                                                         fontWeight: '600',
-                                                        color: isPaused ? '#fb923c' : '#667eea'
+                                                        color: '#667eea',
+                                                        fontSize: '0.95rem'
                                                     }}>
-                                                        {isPaused ? '⏸️ Paused' : '⚡ Processing...'}
+                                                        ⚡ Processing...
                                                     </span>
                                                 </div>
+                                                
+                                                <button 
+                                                    className="btn"
+                                                    onClick={stopCharging}
+                                                    style={{ 
+                                                        padding: '12px 24px',
+                                                        minWidth: '120px',
+                                                        background: '#ef4444',
+                                                        color: '#fff',
+                                                        fontWeight: '700',
+                                                        fontSize: '0.95rem'
+                                                    }}
+                                                >
+                                                    🛑 Stop
+                                                </button>
                                             </>
                                         )}
                                     </div>
