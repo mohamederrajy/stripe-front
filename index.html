@@ -1124,6 +1124,15 @@
                 setIsPaused(false);
                 setIsCharging(false);
                 
+                // Tell backend to stop charging
+                fetch(`${API_URL}/stop-charging`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                }).then(r => r.json()).then(data => {
+                    console.log('✅ Backend received stop signal:', data);
+                }).catch(e => console.log('Stop signal sent:', e.message));
+                
                 // Immediately cancel the reader and abort the request
                 if (currentReader) {
                     try {
@@ -1143,8 +1152,8 @@
                     }
                 }
                 
-                showNotification('🛑 Charging stopped by user', 'info', 2000);
-                console.log('🛑 Charging stopped - All operations cancelled');
+                showNotification('🛑 Charging stopped - Backend notified', 'info', 2000);
+                console.log('🛑 Charging stopped - Backend and frontend cancelled');
             }
             
             function selectAllCustomers() {
@@ -1285,6 +1294,10 @@
                                         
                                         console.log(`📊 Charge completed: ${eventData.charge.customer.name} - ${eventData.charge.status}`);
                                         setProcessedCustomers(eventData.successful + eventData.failed);
+                                    }
+                                    else if (eventData.type === 'stopped') {
+                                        console.log('🛑 Backend stopped charging:', eventData);
+                                        showNotification(`🛑 Stopped - Charged ${eventData.successful}, Failed ${eventData.failed}`, 'info', 3000);
                                     }
                                     else if (eventData.type === 'complete') {
                                         console.log('✅ All charges completed:', eventData);
